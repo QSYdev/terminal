@@ -2,21 +2,24 @@ package main.java.libterminal.lib.keepalive;
 
 import java.util.TreeMap;
 
+import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
 import main.java.libterminal.patterns.observer.EventSource;
 
+/**
+ * La clase se encarga de llevar un control respecto de la conexion de los
+ * nodos. En cuanto ocurra un error con algun spotlight, esta clase sera la
+ * encargada de notificar. No es Thread-Safe.
+ */
 public final class KeepAlive extends EventSource<InternalEvent> implements AutoCloseable {
 
 	private static final int ERROR_RATE = 50;
-	// private static final int MAX_ALLOWED_TIME = (int) ((1 + ERROR_RATE / 100f) *
-	// QSYPacket.KEEP_ALIVE_MS);
-	private static final int MAX_ALLOWED_TIME = 300;
+	private static final int MAX_ALLOWED_TIME = (int) ((1 + ERROR_RATE / 100f) * QSYPacket.KEEP_ALIVE_MS);
 	private static final byte MAX_TRIES = 1;
 
 	private static final int DEAD_NODES_PURGER_PERIOD = (int) (MAX_ALLOWED_TIME * 1.5f);
-
-	private final TreeMap<Integer, KeepAliveInfo> nodes;
 	private volatile boolean running;
+	private final TreeMap<Integer, KeepAliveInfo> nodes;
 	private final Thread thread;
 
 	public KeepAlive() {
@@ -28,7 +31,7 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 
 	public void newNode(int physicalId) {
 		long lastKeepAliveReceived = System.currentTimeMillis();
-		synchronized (this) {
+		synchronized (nodes) {
 			if (running) {
 				if (!nodes.containsKey(physicalId)) {
 					nodes.put(physicalId, new KeepAliveInfo(physicalId, lastKeepAliveReceived));
@@ -43,7 +46,7 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 	}
 
 	private void updateKeepAlive(int physicalId, long currentTime) {
-		synchronized (this) {
+		synchronized (nodes) {
 			if (running) {
 				KeepAliveInfo info = nodes.get(physicalId);
 				if (info != null)
@@ -57,15 +60,15 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 	}
 
 	public void removeNode(int physicalId) {
-		synchronized (this) {
+		synchronized (nodes) {
 			if (running)
 				nodes.remove(physicalId);
 		}
 	}
 
 	@Override
-	public void close() {
-		synchronized (this) {
+	public void close() throws InterruptedException {
+		synchronized (nodes) {
 			if (running) {
 				running = false;
 				thread.interrupt();
@@ -73,15 +76,14 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 				return;
 			}
 		}
+
 		// Despues de este punto, ningun metodo va a producir efectos en las variables
 		// internas de la clase.
 		try {
 			thread.join();
-		} catch (InterruptedException e) {
-			// Estamos en graves problemas si pasa, porque es en el thread principal.
-			e.printStackTrace();
+		} finally {
+			nodes.clear();
 		}
-		nodes.clear();
 	}
 
 	private final static class KeepAliveInfo {
@@ -112,7 +114,7 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 				try {
 					Thread.sleep(DEAD_NODES_PURGER_PERIOD);
 					long currentTime = System.currentTimeMillis();
-					synchronized (KeepAlive.this) {
+					synchronized (nodes) {
 						for (KeepAliveInfo info : nodes.values()) {
 							checkKeepAlive(info, currentTime);
 						}
