@@ -26,8 +26,8 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 		this.thread.start();
 	}
 
-	public void newNode(final int physicalId) {
-		final long lastKeepAliveReceived = System.currentTimeMillis();
+	public void newNode(int physicalId) {
+		long lastKeepAliveReceived = System.currentTimeMillis();
 		synchronized (this) {
 			if (running) {
 				if (!nodes.containsKey(physicalId)) {
@@ -37,26 +37,26 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 		}
 	}
 
-	public void keepAlive(final int physicalId) {
-		final long currentTime = System.currentTimeMillis();
+	public void keepAlive(int physicalId) {
+		long currentTime = System.currentTimeMillis();
 		updateKeepAlive(physicalId, currentTime);
 	}
 
-	private void updateKeepAlive(final int physicalId, final long currentTime) {
+	private void updateKeepAlive(int physicalId, long currentTime) {
 		synchronized (this) {
 			if (running) {
-				final KeepAliveInfo info = nodes.get(physicalId);
+				KeepAliveInfo info = nodes.get(physicalId);
 				if (info != null)
 					info.lastKeepAliveReceived = currentTime;
 			}
 		}
 	}
 
-	public void touche(final int physicalId) {
+	public void touche(int physicalId) {
 		keepAlive(physicalId);
 	}
 
-	public void removeNode(final int physicalId) {
+	public void removeNode(int physicalId) {
 		synchronized (this) {
 			if (running)
 				nodes.remove(physicalId);
@@ -69,13 +69,15 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 			if (running) {
 				running = false;
 				thread.interrupt();
+			} else {
+				return;
 			}
 		}
 		// Despues de este punto, ningun metodo va a producir efectos en las variables
 		// internas de la clase.
 		try {
 			thread.join();
-		} catch (final InterruptedException e) {
+		} catch (InterruptedException e) {
 			// Estamos en graves problemas si pasa, porque es en el thread principal.
 			e.printStackTrace();
 		}
@@ -88,7 +90,7 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 		private byte tries;
 		private long lastKeepAliveReceived;
 
-		public KeepAliveInfo(final int physicalId, final long lastKeepAliveReceived) {
+		public KeepAliveInfo(int physicalId, long lastKeepAliveReceived) {
 			this.physicalId = physicalId;
 			this.tries = 0;
 			this.lastKeepAliveReceived = lastKeepAliveReceived;
@@ -109,20 +111,20 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 			while (running) {
 				try {
 					Thread.sleep(DEAD_NODES_PURGER_PERIOD);
-					final long currentTime = System.currentTimeMillis();
+					long currentTime = System.currentTimeMillis();
 					synchronized (KeepAlive.this) {
-						for (final KeepAliveInfo info : nodes.values()) {
+						for (KeepAliveInfo info : nodes.values()) {
 							checkKeepAlive(info, currentTime);
 						}
 					}
-				} catch (final InterruptedException e) {
+				} catch (InterruptedException e) {
 					running = false;
 				}
 			}
 		}
 	}
 
-	private void checkKeepAlive(final KeepAliveInfo info, final long currentTime) {
+	private void checkKeepAlive(KeepAliveInfo info, long currentTime) {
 		// System.out.println(currentTime - info.lastKeepAliveReceived);
 		if (currentTime - info.lastKeepAliveReceived > MAX_ALLOWED_TIME) {
 			++info.tries;
