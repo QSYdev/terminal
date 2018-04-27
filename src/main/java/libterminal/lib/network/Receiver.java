@@ -20,7 +20,7 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 	private final TreeMap<Integer, ByteBuffer> buffers;
 	private final byte[] data;
 
-	private volatile boolean running;
+	private boolean running;
 
 	private final Thread thread;
 
@@ -37,8 +37,8 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 	}
 
 	public void newNode(final int physicalId, final SocketChannel socket) {
-		synchronized (this) {
-			if (running) {
+		if (running) {
+			synchronized (this) {
 				pendingTasks.add(new NewNodeTask(physicalId, socket));
 			}
 		}

@@ -12,6 +12,9 @@ import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
 import main.java.libterminal.patterns.observer.EventSource;
 
+/**
+ * Maneja los paquetes que se reciven por multicast. No es Thread-Safe.
+ */
 public final class MulticastReceiver extends EventSource<InternalEvent> implements AutoCloseable {
 
 	private final Thread thread;
@@ -20,7 +23,7 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 	private final DatagramPacket packet;
 
 	private volatile boolean acceptPackets;
-	private volatile boolean running;
+	private boolean running;
 
 	public MulticastReceiver(final InetAddress interfaceAddress, final InetAddress multicastAddress, final int port) throws SocketException, IOException {
 		this.socket = new MulticastSocket(port);
@@ -35,26 +38,21 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 	}
 
 	public void acceptPackets(final boolean acceptPackets) {
-		synchronized (this) {
-			if (running) {
+		if (running) {
+			synchronized (this) {
 				this.acceptPackets = acceptPackets;
 			}
 		}
 	}
 
 	@Override
-	public void close() {
-		synchronized (this) {
-			if (running) {
-				running = false;
-				socket.close();
-			}
-			try {
-				thread.join();
-			} catch (final InterruptedException e) {
-				// Grave error, implica que se interrumpio el thread principal.
-				e.printStackTrace();
-			}
+	public void close() throws InterruptedException {
+		if (running) {
+			running = false;
+			socket.close();
+			thread.join();
+		} else {
+			return;
 		}
 	}
 
