@@ -25,7 +25,7 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 	private volatile boolean acceptPackets;
 	private boolean running;
 
-	public MulticastReceiver(final InetAddress interfaceAddress, final InetAddress multicastAddress, final int port) throws SocketException, IOException {
+	public MulticastReceiver(InetAddress interfaceAddress, InetAddress multicastAddress, int port) throws SocketException, IOException {
 		this.socket = new MulticastSocket(port);
 		this.socket.joinGroup(new InetSocketAddress(multicastAddress, port), NetworkInterface.getByInetAddress(interfaceAddress));
 
@@ -37,7 +37,7 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 		this.thread.start();
 	}
 
-	public void acceptPackets(final boolean acceptPackets) {
+	public void acceptPackets(boolean acceptPackets) {
 		if (running) {
 			synchronized (this) {
 				this.acceptPackets = acceptPackets;
@@ -51,18 +51,12 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 			running = false;
 			socket.close();
 			thread.join();
-		} else {
-			return;
 		}
 	}
 
 	private final class MulticastReceiverTask implements Runnable {
 
-		private boolean running;
-
-		public MulticastReceiverTask() {
-			this.running = true;
-		}
+		private boolean running = true;
 
 		@Override
 		public void run() {
@@ -71,13 +65,13 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 					socket.receive(packet);
 					synchronized (this) {
 						if (acceptPackets) {
-							final InetAddress sender = packet.getAddress();
+							InetAddress sender = packet.getAddress();
 							sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(sender, packet.getData())));
 						}
 					}
-				} catch (final SocketException e) {
+				} catch (SocketException e) {
 					running = false;
-				} catch (final Exception e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
