@@ -40,7 +40,7 @@ public class MulticastReceiverTest extends EventListener<InternalEvent> implemen
 		final Thread t = new Thread(test, "Test");
 		t.start();
 
-		final MulticastReceiver mr = new MulticastReceiver((Inet4Address) Inet4Address.getByName("192.168.1.106"), (InetAddress) InetAddress.getByName(QSYPacket.MULTICAST_ADDRESS),
+		final MulticastReceiver mr = new MulticastReceiver((Inet4Address) Inet4Address.getByName("192.168.1.112"), (InetAddress) InetAddress.getByName(QSYPacket.MULTICAST_ADDRESS),
 				QSYPacket.MULTICAST_PORT);
 		mr.addListener(test);
 
