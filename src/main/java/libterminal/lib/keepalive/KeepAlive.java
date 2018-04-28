@@ -1,7 +1,6 @@
 package main.java.libterminal.lib.keepalive;
 
 import java.util.TreeMap;
-import java.util.concurrent.LinkedBlockingQueue;
 
 import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
@@ -21,13 +20,10 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 	private final TreeMap<Integer, KeepAliveInfo> nodes;
 	private final Thread deadNodesPurgerTask;
 
-	private final LinkedBlockingQueue<Runnable> pendingActions;
-
 	private boolean running;
 
 	public KeepAlive() {
 		this.nodes = new TreeMap<>();
-		this.pendingActions = new LinkedBlockingQueue<>();
 		this.running = true;
 		this.deadNodesPurgerTask = new Thread(new DeadNodesPurgerTask(), "Deads Nodes Purger");
 		this.deadNodesPurgerTask.start();
@@ -36,11 +32,11 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 	public void newNode(int physicalId) {
 		long lastKeepAliveReceived = System.currentTimeMillis();
 		if (running) {
-			pendingActions.add(() -> {
+			synchronized (nodes) {
 				if (!nodes.containsKey(physicalId)) {
 					nodes.put(physicalId, new KeepAliveInfo(physicalId, lastKeepAliveReceived));
 				}
-			});
+			}
 		}
 	}
 
@@ -51,11 +47,11 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 
 	private void updateKeepAlive(int physicalId, long currentTime) {
 		if (running) {
-			pendingActions.add(() -> {
+			synchronized (nodes) {
 				KeepAliveInfo info = nodes.get(physicalId);
 				if (info != null)
 					info.lastKeepAliveReceived = currentTime;
-			});
+			}
 		}
 	}
 
@@ -65,9 +61,9 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 
 	public void removeNode(int physicalId) {
 		if (running) {
-			pendingActions.add(() -> {
+			synchronized (nodes) {
 				nodes.remove(physicalId);
-			});
+			}
 		}
 	}
 
@@ -76,19 +72,15 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 		if (running) {
 			running = false;
 			deadNodesPurgerTask.interrupt();
-			// Despues de este punto, ningun metodo va a producir efectos en las variables
-			// internas de la clase.
 			try {
 				deadNodesPurgerTask.join();
 			} finally {
 				nodes.clear();
 			}
-		} else {
-			return;
 		}
 	}
 
-	private final static class KeepAliveInfo {
+	private static final class KeepAliveInfo {
 
 		private int physicalId;
 		private byte tries;
@@ -104,25 +96,17 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 
 	private final class DeadNodesPurgerTask implements Runnable {
 
-		private boolean running;
-
-		public DeadNodesPurgerTask() {
-			this.running = true;
-		}
+		private boolean running = true;
 
 		@Override
 		public void run() {
 			while (running) {
 				try {
-					for (Runnable runnable : pendingActions)
-						runnable.run();
-
 					Thread.sleep(DEAD_NODES_PURGER_PERIOD);
 					long currentTime = System.currentTimeMillis();
 					synchronized (nodes) {
-						for (KeepAliveInfo info : nodes.values()) {
+						for (KeepAliveInfo info : nodes.values())
 							checkKeepAlive(info, currentTime);
-						}
 					}
 				} catch (InterruptedException e) {
 					running = false;
