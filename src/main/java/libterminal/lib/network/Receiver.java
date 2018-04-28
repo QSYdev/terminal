@@ -36,70 +36,56 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 		this.thread.start();
 	}
 
-	public void newNode(final int physicalId, final SocketChannel socket) {
+	public void newNode(int physicalId, SocketChannel socket) {
 		if (running) {
-			synchronized (this) {
-				pendingTasks.add(new NewNodeTask(physicalId, socket));
-			}
+			pendingTasks.add(new NewNodeTask(physicalId, socket));
+			selector.wakeup();
 		}
-		selector.wakeup();
 	}
 
-	public void removeNode(final int physicalId, final SocketChannel socket) {
-		synchronized (this) {
-			if (running) {
-				pendingTasks.add(new RemoveNodeTask(physicalId, socket));
-			}
+	public void removeNode(int physicalId, SocketChannel socket) {
+		if (running) {
+			pendingTasks.add(new RemoveNodeTask(physicalId, socket));
+			selector.wakeup();
 		}
-		selector.wakeup();
 	}
 
 	@Override
-	public void close() {
-		synchronized (this) {
-			if (running) {
-				running = false;
+	public void close() throws IOException, InterruptedException {
+		if (running) {
+			running = false;
+			try {
+				selector.close();
+			} finally {
 				try {
-					selector.close();
-				} catch (final IOException e) {
-					e.printStackTrace();
+					thread.join();
+				} finally {
+					pendingTasks.clear();
+					buffers.clear();
 				}
 			}
-			try {
-				thread.join();
-			} catch (final InterruptedException e) {
-				e.printStackTrace();
-			}
-			pendingTasks.clear();
-			buffers.clear();
 		}
-
 	}
 
 	private final class ReceiverTask implements Runnable {
 
-		private boolean running;
-
-		public ReceiverTask() {
-			this.running = true;
-		}
+		private boolean running = true;
 
 		@Override
 		public void run() {
 			while (running) {
 				Runnable task;
-				while ((task = pendingTasks.poll()) != null) {
+				while ((task = pendingTasks.poll()) != null)
 					task.run();
-				}
 
 				try {
 					selector.select();
-					for (final SelectionKey key : selector.selectedKeys()) {
+					for (SelectionKey key : selector.selectedKeys()) {
 						if (key.isReadable()) {
-							final SocketChannel channel = (SocketChannel) key.channel();
-							final int physicalId = (int) key.attachment();
+							SocketChannel channel = (SocketChannel) key.channel();
+							int physicalId = (int) key.attachment();
 							if (buffers.containsKey(physicalId)) {
-								final ByteBuffer byteBuffer = buffers.get(physicalId);
+								ByteBuffer byteBuffer = buffers.get(physicalId);
 
 								try {
 									channel.read(byteBuffer);
@@ -109,21 +95,17 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 										sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(channel.socket().getInetAddress(), data)));
 										byteBuffer.clear();
 									}
-								} catch (final IOException e) {
-									// Hubo un problema con el read.
+								} catch (IOException e) {
 									byteBuffer.clear();
 									e.printStackTrace();
-								} catch (final Exception e) {
-									e.printStackTrace();
 								}
-
 							}
 						}
 					}
 					selector.selectedKeys().clear();
-				} catch (final ClosedSelectorException e) {
+				} catch (ClosedSelectorException e) {
 					running = false;
-				} catch (final Exception e) {
+				} catch (Exception e) {
 					e.printStackTrace();
 				}
 			}
@@ -136,7 +118,7 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 		private final int physicalId;
 		private final SocketChannel socket;
 
-		public NewNodeTask(final int physicalId, final SocketChannel socket) {
+		public NewNodeTask(int physicalId, SocketChannel socket) {
 			this.physicalId = physicalId;
 			this.socket = socket;
 		}
@@ -148,7 +130,7 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 					if (socket.register(selector, SelectionKey.OP_READ, physicalId) != null)
 						buffers.put(physicalId, ByteBuffer.allocate(QSYPacket.PACKET_SIZE));
 				}
-			} catch (final Exception e) {
+			} catch (Exception e) {
 				e.printStackTrace();
 			}
 		}
@@ -160,19 +142,23 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 		private final int physicalId;
 		private final SocketChannel socket;
 
-		public RemoveNodeTask(final int physicalId, final SocketChannel socket) {
+		public RemoveNodeTask(int physicalId, SocketChannel socket) {
 			this.physicalId = physicalId;
 			this.socket = socket;
 		}
 
 		@Override
 		public void run() {
-			if (buffers.containsKey(physicalId)) {
-				final SelectionKey key = socket.keyFor(selector);
-				if (key != null) {
-					key.cancel();
+			try {
+				if (buffers.containsKey(physicalId)) {
+					SelectionKey key = socket.keyFor(selector);
+					if (key != null) {
+						key.cancel();
+					}
+					buffers.remove(physicalId).clear();
 				}
-				buffers.remove(physicalId).clear();
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 
