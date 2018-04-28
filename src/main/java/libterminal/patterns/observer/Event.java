@@ -17,20 +17,20 @@ public abstract class Event {
 		public ExternalEvent() {
 		}
 
-		public abstract void accept(final ExternalEventVisitor visitor);
+		public abstract void accept(ExternalEventVisitor visitor);
 
 	}
 
 	/**
 	 * La <b>Terminal</b> detecta que un nuevo nodo se ha conectado y envia la
-	 * información hacia afuera del sistema.
+	 * informacion hacia afuera del sistema.
 	 */
 	public static final class ConnectedNode extends ExternalEvent {
 
 		private final InetAddress nodeAddress;
 		private final int physicalId;
 
-		public ConnectedNode(final int physicalId, final InetAddress nodeAddress) {
+		public ConnectedNode(int physicalId, InetAddress nodeAddress) {
 			this.physicalId = physicalId;
 			this.nodeAddress = nodeAddress;
 		}
@@ -44,7 +44,7 @@ public abstract class Event {
 		}
 
 		@Override
-		public void accept(final ExternalEventVisitor handler) {
+		public void accept(ExternalEventVisitor handler) {
 			handler.visit(this);
 		}
 
@@ -59,7 +59,7 @@ public abstract class Event {
 		private final InetAddress nodeAddress;
 		private final int physicalId;
 
-		public DisconnectedNode(final int physicalId, final InetAddress nodeAddress) {
+		public DisconnectedNode(int physicalId, InetAddress nodeAddress) {
 			this.physicalId = physicalId;
 			this.nodeAddress = nodeAddress;
 		}
@@ -73,20 +73,20 @@ public abstract class Event {
 		}
 
 		@Override
-		public void accept(final ExternalEventVisitor handler) {
+		public void accept(ExternalEventVisitor handler) {
 			handler.visit(this);
 		}
 	}
 
 	/**
 	 * La <b>Terminal</b> detecta que un nuevo nodo ha sido tocado y envia la
-	 * información hacia afuera del sistema.
+	 * informacion hacia afuera del sistema.
 	 */
 	public static final class Touche extends ExternalEvent {
 
 		private final ToucheArgs toucheArgs;
 
-		public Touche(final ToucheArgs toucheArgs) {
+		public Touche(ToucheArgs toucheArgs) {
 			this.toucheArgs = toucheArgs;
 		}
 
@@ -95,7 +95,7 @@ public abstract class Event {
 		}
 
 		@Override
-		public void accept(final ExternalEventVisitor handler) {
+		public void accept(ExternalEventVisitor handler) {
 			handler.visit(this);
 		}
 	}
@@ -105,19 +105,19 @@ public abstract class Event {
 		public InternalEvent() {
 		}
 
-		public abstract void accept(final InternalEventVisitor v);
+		public abstract void accept(InternalEventVisitor v);
 	}
 
 	/**
-	 * El Módulo de <b>KeepAlive</b> detecta que los paquetes keepalive de un nodo
-	 * no han llegado a tiempo. El parámetro recibido corresponde al id fisico del
+	 * El Modulo de <b>KeepAlive</b> detecta que los paquetes keepalive de un nodo
+	 * no han llegado a tiempo. El parametro recibido corresponde al id fisico del
 	 * nodo cuyos paquetes no llegaron a tiempo.
 	 */
 	public static final class KeepAliveError extends InternalEvent {
 
 		private final int physicalId;
 
-		public KeepAliveError(final int physicalId) {
+		public KeepAliveError(int physicalId) {
 			this.physicalId = physicalId;
 		}
 
@@ -126,22 +126,22 @@ public abstract class Event {
 		}
 
 		@Override
-		public void accept(final InternalEventVisitor handler) {
+		public void accept(InternalEventVisitor handler) {
 			handler.visit(this);
 		}
 
 	}
 
 	/**
-	 * El módulo de <b>MulticastReceiver</b> y <b>Receiver</b> detectan un nuevo
-	 * paquete proveniente de un nodo. El parámetro recibido corresponde al paquete
+	 * El modulo de <b>MulticastReceiver</b> y <b>Receiver</b> detectan un nuevo
+	 * paquete proveniente de un nodo. El parametro recibido corresponde al paquete
 	 * recibido.
 	 */
 	public static final class IncomingPacket extends InternalEvent {
 
 		private final QSYPacket packet;
 
-		public IncomingPacket(final QSYPacket packet) {
+		public IncomingPacket(QSYPacket packet) {
 			this.packet = packet;
 		}
 
@@ -150,10 +150,33 @@ public abstract class Event {
 		}
 
 		@Override
-		public void accept(final InternalEventVisitor handler) {
+		public void accept(InternalEventVisitor handler) {
 			handler.visit(this);
 		}
 
+	}
+
+	/**
+	 * Todas las tareas en la terminal, pueden producir un error inesperado en el
+	 * sistema. A traves de este evento se puede enviar la informacion a quien este
+	 * interesado.
+	 */
+	public static final class InternalException extends InternalEvent {
+
+		private final Exception exception;
+
+		public InternalException(Exception e) {
+			this.exception = e;
+		}
+
+		public Exception getException() {
+			return exception;
+		}
+
+		@Override
+		public void accept(InternalEventVisitor handler) {
+			handler.visit(this);
+		}
 	}
 
 }

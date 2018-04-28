@@ -1,9 +1,7 @@
 package main.java.libterminal.lib.terminal;
 
-import java.io.IOException;
 import java.net.InetAddress;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import main.java.libterminal.lib.keepalive.KeepAlive;
 import main.java.libterminal.lib.network.MulticastReceiver;
@@ -17,12 +15,13 @@ import main.java.libterminal.patterns.observer.Event;
 import main.java.libterminal.patterns.observer.Event.ExternalEvent;
 import main.java.libterminal.patterns.observer.Event.IncomingPacket;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
+import main.java.libterminal.patterns.observer.Event.InternalException;
 import main.java.libterminal.patterns.observer.Event.KeepAliveError;
 import main.java.libterminal.patterns.observer.EventListener;
-import main.java.libterminal.patterns.observer.EventSource;
+import main.java.libterminal.patterns.observer.EventSourceI;
 import main.java.libterminal.patterns.visitor.event.InternalEventVisitor;
 
-public final class Terminal implements AutoCloseable {
+public final class Terminal implements EventSourceI<ExternalEvent>, AutoCloseable {
 
 	private final InetAddress interfaceAddress;
 	private final EventSource<ExternalEvent> eventSource;
@@ -33,142 +32,147 @@ public final class Terminal implements AutoCloseable {
 	private volatile Receiver receiver;
 	private volatile TerminalTask task;
 
-	private volatile Boolean running;
+	private volatile boolean running;
+	private volatile boolean closed;
+	private volatile int connectedNodes;
 
-	public Terminal(final InetAddress interfaceAddress) {
-		this.eventSource = new EventSource<>();
+	public Terminal(InetAddress interfaceAddress) {
 		this.interfaceAddress = interfaceAddress;
-
+		this.eventSource = new EventSource<>();
+		this.closed = false;
 		this.running = false;
+		this.connectedNodes = 0;
 	}
 
-	public void start() {
-		synchronized (running) {
-			if (!running) {
-				running = true;
-				try {
-					mutlticastReceiver = new MulticastReceiver(interfaceAddress, (InetAddress) InetAddress.getByName(QSYPacket.MULTICAST_ADDRESS), QSYPacket.MULTICAST_PORT);
-					keepAlive = new KeepAlive();
-					sender = new Sender();
-					receiver = new Receiver();
+	public synchronized void start() {
+		try {
+			running = true;
+			mutlticastReceiver = new MulticastReceiver(interfaceAddress, (InetAddress) InetAddress.getByName(QSYPacket.MULTICAST_ADDRESS), QSYPacket.MULTICAST_PORT);
+			keepAlive = new KeepAlive();
+			sender = new Sender();
+			receiver = new Receiver();
 
-					task = new TerminalTask();
-					mutlticastReceiver.addListener(task);
-					keepAlive.addListener(task);
-					receiver.addListener(task);
-				} catch (final IOException e) {
-					stop();
-					e.printStackTrace();
-				}
-			}
-		}
-
-	}
-
-	public void stop() {
-		synchronized (running) {
-			if (running) {
-				running = false;
-
-				if (task != null) {
-					task.close();
-				}
-
-				if (receiver != null) {
-					receiver.close();
-				}
-
-				if (sender != null) {
-					sender.close();
-				}
-
-				if (keepAlive != null) {
-					keepAlive.removeListener(task);
-					keepAlive.close();
-				}
-
-				if (mutlticastReceiver != null) {
-					mutlticastReceiver.removeListener(task);
-					mutlticastReceiver.close();
-				}
-
-				mutlticastReceiver = null;
-				keepAlive = null;
-				receiver = null;
-				sender = null;
-				task = null;
-			}
+			task = new TerminalTask();
+			mutlticastReceiver.addListener(task);
+			keepAlive.addListener(task);
+			sender.addListener(task);
+			receiver.addListener(task);
+		} catch (Exception e) {
+			stop();
+			e.printStackTrace();
 		}
 	}
 
-	public int connectedNodesAmount() {
-		synchronized (running) {
-			if (running)
-				return task.getConnectedNodesAmount();
-			else
-				return 0;
+	public synchronized void stop() {
+		running = false;
+		try {
+			if (task != null)
+				task.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		try {
+			if (receiver != null)
+				receiver.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		try {
+			if (sender != null)
+				sender.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		try {
+			if (keepAlive != null) {
+				keepAlive.removeListener(task);
+				keepAlive.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		try {
+			if (mutlticastReceiver != null) {
+				mutlticastReceiver.removeListener(task);
+				mutlticastReceiver.close();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		mutlticastReceiver = null;
+		keepAlive = null;
+		receiver = null;
+		sender = null;
+		task = null;
+	}
+
+	public synchronized int connectedNodesAmount() {
+		return connectedNodes;
+	}
+
+	protected synchronized void setConnectedNodes(int connectedNodes) {
+		this.connectedNodes = connectedNodes;
+	}
+
+	public synchronized boolean isRunning() {
+		return running;
+	}
+
+	@Override
+	public synchronized void close() {
+		if (!closed) {
+			closed = true;
+			stop();
+		}
+	}
+
+	public synchronized void searchNodes() {
+		mutlticastReceiver.acceptPackets(true);
+	}
+
+	public synchronized void finalizeNodesSearch() {
+		mutlticastReceiver.acceptPackets(false);
+	}
+
+	public synchronized void sendCommand(CommandArgs params) {
+		try {
+			sender.command(QSYPacket.createCommandPacket(params));
+		} catch (IllegalArgumentException e) {
+			e.printStackTrace();
 		}
 	}
 
 	@Override
-	public void close() {
-		stop();
+	public synchronized void addListener(EventListener<ExternalEvent> eventListener) {
+		eventSource.addListener(eventListener);
 	}
 
-	public void addListener(final EventListener<ExternalEvent> listener) {
-		eventSource.addListener(listener);
+	@Override
+	public synchronized void removeListener(EventListener<ExternalEvent> eventListener) {
+		eventSource.removeListener(eventListener);
 	}
 
-	public void removeListener(final EventListener<ExternalEvent> listener) {
-		eventSource.removeListener(listener);
-	}
-
-	public void searchNodes() {
-		synchronized (running) {
-			if (running) {
-				mutlticastReceiver.acceptPackets(true);
-			}
-		}
-	}
-
-	public void finalizeNodesSearch() {
-		synchronized (running) {
-			if (running) {
-				mutlticastReceiver.acceptPackets(false);
-			}
-		}
-	}
-
-	public void sendCommand(final CommandArgs params) {
-		synchronized (running) {
-			if (running) {
-				try {
-					sender.command(QSYPacket.createCommandPacket(params));
-				} catch (final IllegalArgumentException e) {
-					e.printStackTrace();
-				}
-			}
-		}
+	protected synchronized void sendEvent(ExternalEvent event) {
+		eventSource.sendEvent(event);
 	}
 
 	private final class TerminalTask extends EventListener<InternalEvent> implements Runnable, InternalEventVisitor, AutoCloseable {
 
 		private final TreeMap<Integer, Node> nodes;
-		private final AtomicInteger connectedNodesAmount;
 
 		private final Thread thread;
 		private boolean running;
 
 		public TerminalTask() {
 			this.nodes = new TreeMap<>();
-			connectedNodesAmount = new AtomicInteger(nodes.size());
 			this.running = true;
 			thread = new Thread(this, "Terminal");
 			thread.start();
-		}
-
-		public int getConnectedNodesAmount() {
-			return connectedNodesAmount.get();
 		}
 
 		@Override
@@ -184,7 +188,7 @@ public final class Terminal implements AutoCloseable {
 			for (final Node node : nodes.values())
 				node.close();
 			nodes.clear();
-			connectedNodesAmount.set(nodes.size());
+			setConnectedNodes(nodes.size());
 		}
 
 		@Override
@@ -226,6 +230,11 @@ public final class Terminal implements AutoCloseable {
 			default:
 				break;
 			}
+		}
+
+		@Override
+		public void visit(InternalException internalError) {
+			// TODO
 		}
 
 		private void createNode(final QSYPacket packet) {

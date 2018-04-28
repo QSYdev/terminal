@@ -11,7 +11,7 @@ public class EventListener<T extends Event> {
 		this.eventQueue = new LinkedBlockingQueue<>();
 	}
 
-	public final void receiveEvent(final T event) {
+	public final void receiveEvent(T event) {
 		eventQueue.add(event);
 	}
 

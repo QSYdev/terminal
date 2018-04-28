@@ -40,12 +40,8 @@ public class Node implements AutoCloseable {
 	}
 
 	@Override
-	public void close() {
-		try {
-			nodeSocketChannel.close();
-		} catch (final IOException e) {
-			e.printStackTrace();
-		}
+	public void close() throws IOException {
+		nodeSocketChannel.close();
 	}
 
 }

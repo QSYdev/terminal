@@ -9,61 +9,60 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 
 import main.java.libterminal.lib.protocol.QSYPacket;
+import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
-import main.java.libterminal.patterns.observer.EventSource;
+import main.java.libterminal.patterns.observer.EventSourceI.EventSource;
 
 /**
  * Maneja los paquetes que se reciven por multicast. No es Thread-Safe.
  */
 public final class MulticastReceiver extends EventSource<InternalEvent> implements AutoCloseable {
 
-	private final Thread thread;
+	private final Thread multicastReceiverTask;
 
 	private final MulticastSocket socket;
 	private final DatagramPacket packet;
 
-	private volatile boolean acceptPackets;
-	private boolean running;
+	private volatile Boolean acceptPackets;
+	private volatile boolean closed;
 
 	public MulticastReceiver(InetAddress interfaceAddress, InetAddress multicastAddress, int port) throws SocketException, IOException {
 		this.socket = new MulticastSocket(port);
 		this.socket.joinGroup(new InetSocketAddress(multicastAddress, port), NetworkInterface.getByInetAddress(interfaceAddress));
 
 		this.packet = new DatagramPacket(new byte[QSYPacket.PACKET_SIZE], QSYPacket.PACKET_SIZE);
-		this.running = true;
+		this.closed = false;
 		this.acceptPackets = false;
 
-		this.thread = new Thread(new MulticastReceiverTask(), "Multicast Receiver");
-		this.thread.start();
+		this.multicastReceiverTask = new Thread(new MulticastReceiverTask(), "MulticastReceiver");
+		this.multicastReceiverTask.start();
 	}
 
 	public void acceptPackets(boolean acceptPackets) {
-		if (running) {
-			synchronized (this) {
-				this.acceptPackets = acceptPackets;
-			}
+		synchronized (this.acceptPackets) {
+			this.acceptPackets = acceptPackets;
 		}
 	}
 
 	@Override
 	public void close() throws InterruptedException {
-		if (running) {
-			running = false;
+		if (!closed) {
+			closed = true;
 			socket.close();
-			thread.join();
+			multicastReceiverTask.join();
 		}
 	}
 
-	private final class MulticastReceiverTask implements Runnable {
+	private final class MulticastReceiverTask extends TerminalRunnable {
 
 		private boolean running = true;
 
 		@Override
-		public void run() {
+		protected void runTerminalTask() throws Exception {
 			while (running) {
 				try {
 					socket.receive(packet);
-					synchronized (this) {
+					synchronized (acceptPackets) {
 						if (acceptPackets) {
 							InetAddress sender = packet.getAddress();
 							sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(sender, packet.getData())));
@@ -71,10 +70,13 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 					}
 				} catch (SocketException e) {
 					running = false;
-				} catch (Exception e) {
-					e.printStackTrace();
 				}
 			}
+		}
+
+		@Override
+		protected void handleError(Exception e) {
+			sendEvent(new InternalEvent.InternalException(e));
 		}
 
 	}

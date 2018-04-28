@@ -3,8 +3,9 @@ package main.java.libterminal.lib.keepalive;
 import java.util.TreeMap;
 
 import main.java.libterminal.lib.protocol.QSYPacket;
+import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
-import main.java.libterminal.patterns.observer.EventSource;
+import main.java.libterminal.patterns.observer.EventSourceI.EventSource;
 
 /**
  * La clase se encarga de llevar un control respecto de la desconexion de los
@@ -15,27 +16,25 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 	private static final int ERROR_RATE = 50;
 	private static final int MAX_ALLOWED_TIME = (int) ((1 + ERROR_RATE / 100f) * QSYPacket.KEEP_ALIVE_MS);
 	private static final byte MAX_TRIES = 1;
-
 	private static final int DEAD_NODES_PURGER_PERIOD = (int) (MAX_ALLOWED_TIME * 1.5f);
+
 	private final TreeMap<Integer, KeepAliveInfo> nodes;
 	private final Thread deadNodesPurgerTask;
 
-	private boolean running;
+	private volatile boolean closed;
 
 	public KeepAlive() {
 		this.nodes = new TreeMap<>();
-		this.running = true;
-		this.deadNodesPurgerTask = new Thread(new DeadNodesPurgerTask(), "Deads Nodes Purger");
+		this.closed = false;
+		this.deadNodesPurgerTask = new Thread(new DeadNodesPurgerTask(), "DeadsNodesPurger");
 		this.deadNodesPurgerTask.start();
 	}
 
 	public void newNode(int physicalId) {
 		long lastKeepAliveReceived = System.currentTimeMillis();
-		if (running) {
-			synchronized (nodes) {
-				if (!nodes.containsKey(physicalId)) {
-					nodes.put(physicalId, new KeepAliveInfo(physicalId, lastKeepAliveReceived));
-				}
+		synchronized (nodes) {
+			if (!nodes.containsKey(physicalId)) {
+				nodes.put(physicalId, new KeepAliveInfo(physicalId, lastKeepAliveReceived));
 			}
 		}
 	}
@@ -46,12 +45,10 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 	}
 
 	private void updateKeepAlive(int physicalId, long currentTime) {
-		if (running) {
-			synchronized (nodes) {
-				KeepAliveInfo info = nodes.get(physicalId);
-				if (info != null)
-					info.lastKeepAliveReceived = currentTime;
-			}
+		synchronized (nodes) {
+			KeepAliveInfo info = nodes.get(physicalId);
+			if (info != null)
+				info.lastKeepAliveReceived = currentTime;
 		}
 	}
 
@@ -60,17 +57,15 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 	}
 
 	public void removeNode(int physicalId) {
-		if (running) {
-			synchronized (nodes) {
-				nodes.remove(physicalId);
-			}
+		synchronized (nodes) {
+			nodes.remove(physicalId);
 		}
 	}
 
 	@Override
 	public void close() throws InterruptedException {
-		if (running) {
-			running = false;
+		if (!closed) {
+			closed = true;
 			deadNodesPurgerTask.interrupt();
 			try {
 				deadNodesPurgerTask.join();
@@ -82,9 +77,9 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 
 	private static final class KeepAliveInfo {
 
-		private int physicalId;
-		private byte tries;
-		private long lastKeepAliveReceived;
+		private final int physicalId;
+		private volatile byte tries;
+		private volatile long lastKeepAliveReceived;
 
 		public KeepAliveInfo(int physicalId, long lastKeepAliveReceived) {
 			this.physicalId = physicalId;
@@ -94,12 +89,12 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 
 	}
 
-	private final class DeadNodesPurgerTask implements Runnable {
+	private final class DeadNodesPurgerTask extends TerminalRunnable {
 
 		private boolean running = true;
 
 		@Override
-		public void run() {
+		protected void runTerminalTask() {
 			while (running) {
 				try {
 					Thread.sleep(DEAD_NODES_PURGER_PERIOD);
@@ -112,6 +107,11 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 					running = false;
 				}
 			}
+		}
+
+		@Override
+		protected void handleError(Exception e) {
+			sendEvent(new InternalEvent.InternalException(e));
 		}
 	}
 
