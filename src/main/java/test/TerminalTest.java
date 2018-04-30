@@ -7,10 +7,10 @@ import java.util.Scanner;
 import main.java.libterminal.lib.protocol.QSYPacket.CommandArgs;
 import main.java.libterminal.lib.routine.Color;
 import main.java.libterminal.lib.terminal.Terminal;
-import main.java.libterminal.patterns.observer.Event.ConnectedNode;
-import main.java.libterminal.patterns.observer.Event.DisconnectedNode;
 import main.java.libterminal.patterns.observer.Event.ExternalEvent;
-import main.java.libterminal.patterns.observer.Event.Touche;
+import main.java.libterminal.patterns.observer.Event.ExternalEvent.ConnectedNode;
+import main.java.libterminal.patterns.observer.Event.ExternalEvent.DisconnectedNode;
+import main.java.libterminal.patterns.observer.Event.ExternalEvent.Touche;
 import main.java.libterminal.patterns.observer.EventListener;
 import main.java.libterminal.patterns.visitor.event.ExternalEventVisitor;
 
@@ -24,9 +24,9 @@ public class TerminalTest {
 		final Thread thread = new Thread(task, "Task");
 		thread.start();
 
-		terminal = new Terminal((Inet4Address) Inet4Address.getByName("192.168.1.106"));
+		terminal = new Terminal((Inet4Address) Inet4Address.getByName("192.168.1.112"));
 		terminal.addListener(task);
-		final CommandArgs params = new CommandArgs(1, Color.CYAN, 500, 1, false, true);
+		final CommandArgs params = new CommandArgs(19, Color.CYAN, 500, 1, false, true);
 
 		final Scanner scanner = new Scanner(System.in);
 		char command = 0;
@@ -76,7 +76,7 @@ public class TerminalTest {
 		public void run() {
 			while (running) {
 				try {
-					final ExternalEvent event = getEvent();
+					ExternalEvent event = getEvent();
 					event.accept(this);
 				} catch (final InterruptedException e) {
 					running = false;
@@ -85,17 +85,17 @@ public class TerminalTest {
 		}
 
 		@Override
-		public void visit(final ConnectedNode event) {
+		public void visit(ConnectedNode event) {
 			System.out.println("Se ha conectado el nodo " + event.getPhysicalId());
 		}
 
 		@Override
-		public void visit(final DisconnectedNode event) {
+		public void visit(DisconnectedNode event) {
 			System.err.println("Se ha desconectado el nodo " + event.getPhysicalId());
 		}
 
 		@Override
-		public void visit(final Touche event) {
+		public void visit(Touche event) {
 			System.out.println("Se ha tocado el nodo " + event.getToucheArgs().getPhysicalId());
 		}
 
@@ -117,8 +117,8 @@ public class TerminalTest {
 			while (running) {
 				try {
 					Thread.sleep(1000);
-					for (int i = 1; i <= terminal.connectedNodesAmount(); i++) {
-						terminal.sendCommand(new CommandArgs(i, Color.CYAN, 500, 3));
+					for (int i = 1; i <= terminal.getConnectedNodes(); i++) {
+						terminal.sendCommand(new CommandArgs(19, Color.CYAN, 500, 3));
 					}
 				} catch (InterruptedException e) {
 					running = false;

@@ -68,7 +68,11 @@ public class SenderTest {
 			} catch (InterruptedException e) {
 				e.printStackTrace();
 			}
-			sender.close();
+			try {
+				sender.close();
+			} catch (InterruptedException e) {
+				e.printStackTrace();
+			}
 		}
 
 	}

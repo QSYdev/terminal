@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import main.java.libterminal.lib.network.Receiver;
 import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.observer.Event.IncomingPacket;
-import main.java.libterminal.patterns.observer.Event.InternalEvent;
+import main.java.libterminal.patterns.observer.Event.InternalException;
 import main.java.libterminal.patterns.observer.EventListener;
 import main.java.libterminal.patterns.visitor.event.InternalEventVisitor;
 
@@ -34,7 +34,7 @@ public class ReceiverTest implements AutoCloseable {
 	}
 
 	@Override
-	public void close() throws InterruptedException {
+	public void close() throws InterruptedException, IOException {
 		receiver.close();
 		server.interrupt();
 		terminal.interrupt();
@@ -59,7 +59,7 @@ public class ReceiverTest implements AutoCloseable {
 		public void run() {
 			try {
 				final ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
-				serverSocketChannel.socket().bind(new InetSocketAddress(Inet4Address.getByName("192.168.1.106"), QSYPacket.TCP_PORT));
+				serverSocketChannel.socket().bind(new InetSocketAddress(Inet4Address.getByName("192.168.1.112"), QSYPacket.TCP_PORT));
 				while (running) {
 					final SocketChannel channel = serverSocketChannel.accept();
 					System.out.println("Se ha conectado un cliente");
@@ -75,7 +75,7 @@ public class ReceiverTest implements AutoCloseable {
 		}
 	}
 
-	private final class TerminalTask extends EventListener<InternalEvent> implements Runnable, InternalEventVisitor {
+	private final class TerminalTask extends EventListener<InternalException> implements Runnable, InternalEventVisitor {
 
 		private boolean running;
 
@@ -87,7 +87,7 @@ public class ReceiverTest implements AutoCloseable {
 		public void run() {
 			while (running) {
 				try {
-					final InternalEvent event = getEvent();
+					final InternalException event = getEvent();
 					event.accept(this);
 				} catch (final InterruptedException e) {
 					running = false;

@@ -4,12 +4,12 @@ import java.util.Random;
 
 import main.java.libterminal.lib.keepalive.KeepAlive;
 import main.java.libterminal.lib.protocol.QSYPacket;
-import main.java.libterminal.patterns.observer.Event.InternalEvent;
+import main.java.libterminal.patterns.observer.Event.InternalException;
 import main.java.libterminal.patterns.observer.Event.KeepAliveError;
 import main.java.libterminal.patterns.observer.EventListener;
 import main.java.libterminal.patterns.visitor.event.InternalEventVisitor;
 
-public final class KeepAliveTest extends EventListener<InternalEvent> implements Runnable, InternalEventVisitor {
+public final class KeepAliveTest extends EventListener<InternalException> implements Runnable, InternalEventVisitor {
 
 	private static final KeepAlive keepAlive = new KeepAlive();
 
@@ -23,7 +23,7 @@ public final class KeepAliveTest extends EventListener<InternalEvent> implements
 	public void run() {
 		while (running) {
 			try {
-				final InternalEvent event = getEvent();
+				final InternalException event = getEvent();
 				event.accept(this);
 			} catch (final InterruptedException e) {
 				running = false;

@@ -3,6 +3,10 @@ package main.java.libterminal.patterns.observer;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
+/**
+ * La clase encargada de recibir asincronicamente los eventos que ocurren. Es
+ * Trhead-Safe.
+ */
 public class EventListener<T extends Event> {
 
 	private final BlockingQueue<T> eventQueue;

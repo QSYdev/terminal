@@ -10,11 +10,11 @@ import java.util.Scanner;
 import main.java.libterminal.lib.network.MulticastReceiver;
 import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.observer.Event.IncomingPacket;
-import main.java.libterminal.patterns.observer.Event.InternalEvent;
+import main.java.libterminal.patterns.observer.Event.InternalException;
 import main.java.libterminal.patterns.observer.EventListener;
 import main.java.libterminal.patterns.visitor.event.InternalEventVisitor;
 
-public class MulticastReceiverTest extends EventListener<InternalEvent> implements Runnable, InternalEventVisitor {
+public class MulticastReceiverTest extends EventListener<InternalException> implements Runnable, InternalEventVisitor {
 
 	private boolean running = true;
 
@@ -22,7 +22,7 @@ public class MulticastReceiverTest extends EventListener<InternalEvent> implemen
 	public void run() {
 		while (running) {
 			try {
-				final InternalEvent event = getEvent();
+				final InternalException event = getEvent();
 				event.accept(this);
 			} catch (final InterruptedException e) {
 				running = false;
@@ -32,7 +32,7 @@ public class MulticastReceiverTest extends EventListener<InternalEvent> implemen
 
 	@Override
 	public void visit(final IncomingPacket event) {
-		System.out.println("Paquete recibido");
+		System.out.println(event.getPacket().getPhysicalId());
 	}
 
 	public static void main(String[] args) throws SocketException, UnknownHostException, IOException, InterruptedException {

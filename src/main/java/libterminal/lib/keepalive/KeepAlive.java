@@ -5,25 +5,28 @@ import java.util.TreeMap;
 import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
-import main.java.libterminal.patterns.observer.EventSourceI.EventSource;
+import main.java.libterminal.patterns.observer.EventListener;
+import main.java.libterminal.patterns.observer.EventSourceI;
 
 /**
  * La clase se encarga de llevar un control respecto de la desconexion de los
  * nodos. No es Thread-Safe.
  */
-public final class KeepAlive extends EventSource<InternalEvent> implements AutoCloseable {
+public final class KeepAlive implements EventSourceI<InternalEvent>, AutoCloseable {
 
 	private static final int ERROR_RATE = 50;
 	private static final int MAX_ALLOWED_TIME = (int) ((1 + ERROR_RATE / 100f) * QSYPacket.KEEP_ALIVE_MS);
 	private static final byte MAX_TRIES = 1;
 	private static final int DEAD_NODES_PURGER_PERIOD = (int) (MAX_ALLOWED_TIME * 1.5f);
 
+	private final EventSource<InternalEvent> eventSource;
 	private final TreeMap<Integer, KeepAliveInfo> nodes;
 	private final Thread deadNodesPurgerTask;
 
 	private volatile boolean closed;
 
 	public KeepAlive() {
+		this.eventSource = new EventSource<>();
 		this.nodes = new TreeMap<>();
 		this.closed = false;
 		this.deadNodesPurgerTask = new Thread(new DeadNodesPurgerTask(), "DeadsNodesPurger");
@@ -63,6 +66,16 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 	}
 
 	@Override
+	public void addListener(EventListener<InternalEvent> eventListener) {
+		eventSource.addListener(eventListener);
+	}
+
+	@Override
+	public void removeListener(EventListener<InternalEvent> eventListener) {
+		eventSource.removeListener(eventListener);
+	}
+
+	@Override
 	public void close() throws InterruptedException {
 		if (!closed) {
 			closed = true;
@@ -71,6 +84,7 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 				deadNodesPurgerTask.join();
 			} finally {
 				nodes.clear();
+				eventSource.close();
 			}
 		}
 	}
@@ -91,7 +105,7 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 
 	private final class DeadNodesPurgerTask extends TerminalRunnable {
 
-		private boolean running = true;
+		private volatile boolean running = true;
 
 		@Override
 		protected void runTerminalTask() {
@@ -111,7 +125,7 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 
 		@Override
 		protected void handleError(Exception e) {
-			sendEvent(new InternalEvent.InternalException(e));
+			eventSource.sendEvent(new InternalEvent.InternalException(e));
 		}
 	}
 
@@ -120,7 +134,7 @@ public final class KeepAlive extends EventSource<InternalEvent> implements AutoC
 		if (currentTime - info.lastKeepAliveReceived > MAX_ALLOWED_TIME) {
 			++info.tries;
 			if (info.tries >= MAX_TRIES)
-				sendEvent(new InternalEvent.KeepAliveError(info.physicalId));
+				eventSource.sendEvent(new InternalEvent.KeepAliveError(info.physicalId));
 		} else {
 			info.tries = 0;
 		}

@@ -11,15 +11,17 @@ import java.net.SocketException;
 import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
-import main.java.libterminal.patterns.observer.EventSourceI.EventSource;
+import main.java.libterminal.patterns.observer.EventListener;
+import main.java.libterminal.patterns.observer.EventSourceI;
 
 /**
  * Maneja los paquetes que se reciven por multicast. No es Thread-Safe.
  */
-public final class MulticastReceiver extends EventSource<InternalEvent> implements AutoCloseable {
+public final class MulticastReceiver implements EventSourceI<InternalEvent>, AutoCloseable {
 
 	private final Thread multicastReceiverTask;
 
+	private final EventSource<InternalEvent> eventSource;
 	private final MulticastSocket socket;
 	private final DatagramPacket packet;
 
@@ -30,6 +32,7 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 		this.socket = new MulticastSocket(port);
 		this.socket.joinGroup(new InetSocketAddress(multicastAddress, port), NetworkInterface.getByInetAddress(interfaceAddress));
 
+		this.eventSource = new EventSource<>();
 		this.packet = new DatagramPacket(new byte[QSYPacket.PACKET_SIZE], QSYPacket.PACKET_SIZE);
 		this.closed = false;
 		this.acceptPackets = false;
@@ -45,17 +48,31 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 	}
 
 	@Override
+	public void addListener(EventListener<InternalEvent> eventListener) {
+		eventSource.addListener(eventListener);
+	}
+
+	@Override
+	public void removeListener(EventListener<InternalEvent> eventListener) {
+		eventSource.removeListener(eventListener);
+	}
+
+	@Override
 	public void close() throws InterruptedException {
 		if (!closed) {
 			closed = true;
 			socket.close();
-			multicastReceiverTask.join();
+			try {
+				multicastReceiverTask.join();
+			} finally {
+				eventSource.close();
+			}
 		}
 	}
 
 	private final class MulticastReceiverTask extends TerminalRunnable {
 
-		private boolean running = true;
+		private volatile boolean running = true;
 
 		@Override
 		protected void runTerminalTask() throws Exception {
@@ -65,7 +82,7 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 					synchronized (acceptPackets) {
 						if (acceptPackets) {
 							InetAddress sender = packet.getAddress();
-							sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(sender, packet.getData())));
+							eventSource.sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(sender, packet.getData())));
 						}
 					}
 				} catch (SocketException e) {
@@ -76,7 +93,7 @@ public final class MulticastReceiver extends EventSource<InternalEvent> implemen
 
 		@Override
 		protected void handleError(Exception e) {
-			sendEvent(new InternalEvent.InternalException(e));
+			eventSource.sendEvent(new InternalEvent.InternalException(e));
 		}
 
 	}

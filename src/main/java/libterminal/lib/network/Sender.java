@@ -10,14 +10,17 @@ import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.command.Command;
 import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
-import main.java.libterminal.patterns.observer.EventSourceI.EventSource;
+import main.java.libterminal.patterns.observer.Event.InternalEvent.InternalException;
+import main.java.libterminal.patterns.observer.EventListener;
+import main.java.libterminal.patterns.observer.EventSourceI;
 
 /**
  * Envia asincronicamente paquetes a los diferentes nodos registrados. No es
  * Thread-Safe.
  */
-public final class Sender extends EventSource<InternalEvent> implements AutoCloseable {
+public final class Sender implements EventSourceI<InternalEvent>, AutoCloseable {
 
+	private final EventSource<InternalEvent> eventSource;
 	private final LinkedBlockingQueue<Command> pendingTasks;
 
 	private final TreeMap<Integer, SocketChannel> nodes;
@@ -28,6 +31,7 @@ public final class Sender extends EventSource<InternalEvent> implements AutoClos
 	private volatile boolean closed;
 
 	public Sender() {
+		this.eventSource = new EventSource<>();
 		this.pendingTasks = new LinkedBlockingQueue<>();
 
 		this.closed = false;
@@ -57,6 +61,16 @@ public final class Sender extends EventSource<InternalEvent> implements AutoClos
 	}
 
 	@Override
+	public void addListener(EventListener<InternalEvent> eventListener) {
+		eventSource.addListener(eventListener);
+	}
+
+	@Override
+	public void removeListener(EventListener<InternalEvent> eventListener) {
+		eventSource.removeListener(eventListener);
+	}
+
+	@Override
 	public void close() throws InterruptedException {
 		if (!closed) {
 			closed = true;
@@ -68,13 +82,14 @@ public final class Sender extends EventSource<InternalEvent> implements AutoClos
 				pendingTasks.clear();
 				nodes.clear();
 				byteBuffer.clear();
+				eventSource.close();
 			}
 		}
 	}
 
 	private final class SenderTask extends TerminalRunnable {
 
-		private boolean running = true;
+		private volatile boolean running = true;
 
 		@Override
 		protected void runTerminalTask() throws Exception {
@@ -90,7 +105,7 @@ public final class Sender extends EventSource<InternalEvent> implements AutoClos
 
 		@Override
 		protected void handleError(Exception e) {
-			sendEvent(new InternalEvent.InternalException(e));
+			eventSource.sendEvent(new InternalException.InternalException(e));
 		}
 
 	}

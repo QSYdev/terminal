@@ -13,13 +13,15 @@ import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.command.Command;
 import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
-import main.java.libterminal.patterns.observer.EventSourceI.EventSource;
+import main.java.libterminal.patterns.observer.EventListener;
+import main.java.libterminal.patterns.observer.EventSourceI;
 
 /**
  * Maneja los paquetes que se reciben por algun socket. No es Thread-Safe.
  */
-public final class Receiver extends EventSource<InternalEvent> implements AutoCloseable {
+public final class Receiver implements EventSourceI<InternalEvent>, AutoCloseable {
 
+	private final EventSource<InternalEvent> eventSource;
 	private final Selector selector;
 	private final LinkedBlockingQueue<Command> pendingTasks;
 	private final TreeMap<Integer, ByteBuffer> buffers;
@@ -31,6 +33,7 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 
 	public Receiver() throws IOException {
 		this.selector = Selector.open();
+		this.eventSource = new EventSource<>();
 		this.pendingTasks = new LinkedBlockingQueue<>();
 		this.buffers = new TreeMap<>();
 		this.data = new byte[QSYPacket.PACKET_SIZE];
@@ -52,6 +55,16 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 	}
 
 	@Override
+	public void addListener(EventListener<InternalEvent> eventListener) {
+		eventSource.addListener(eventListener);
+	}
+
+	@Override
+	public void removeListener(EventListener<InternalEvent> eventListener) {
+		eventSource.removeListener(eventListener);
+	}
+
+	@Override
 	public void close() throws IOException, InterruptedException {
 		if (!closed) {
 			closed = true;
@@ -63,6 +76,7 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 				} finally {
 					pendingTasks.clear();
 					buffers.clear();
+					eventSource.close();
 				}
 			}
 		}
@@ -70,7 +84,7 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 
 	private final class ReceiverTask extends TerminalRunnable {
 
-		private boolean running = true;
+		private volatile boolean running = true;
 
 		@Override
 		protected void runTerminalTask() throws Exception {
@@ -92,7 +106,7 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 								if (byteBuffer.remaining() == 0) {
 									byteBuffer.flip();
 									byteBuffer.get(data);
-									sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(channel.socket().getInetAddress(), data)));
+									eventSource.sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(channel.socket().getInetAddress(), data)));
 									byteBuffer.clear();
 								}
 							}
@@ -107,7 +121,7 @@ public final class Receiver extends EventSource<InternalEvent> implements AutoCl
 
 		@Override
 		protected void handleError(Exception e) {
-			sendEvent(new InternalEvent.InternalException(e));
+			eventSource.sendEvent(new InternalEvent.InternalException(e));
 		}
 
 	}
