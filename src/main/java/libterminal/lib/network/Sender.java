@@ -8,9 +8,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.command.Command;
-import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
-import main.java.libterminal.patterns.observer.Event.InternalEvent.InternalException;
 import main.java.libterminal.patterns.observer.EventListener;
 import main.java.libterminal.patterns.observer.EventSourceI;
 
@@ -51,7 +49,7 @@ public final class Sender implements EventSourceI<InternalEvent>, AutoCloseable 
 	}
 
 	public void command(QSYPacket packet) {
-		pendingTasks.add(new CommandTask(packet));
+		pendingTasks.add(new SenderCommand(packet));
 	}
 
 	public void removeNode(int physicalId) {
@@ -87,35 +85,32 @@ public final class Sender implements EventSourceI<InternalEvent>, AutoCloseable 
 		}
 	}
 
-	private final class SenderTask extends TerminalRunnable {
+	private final class SenderTask implements Runnable {
 
 		private volatile boolean running = true;
 
 		@Override
-		protected void runTerminalTask() throws Exception {
+		public void run() {
 			while (running) {
 				try {
 					Command task = pendingTasks.take();
 					task.execute();
 				} catch (InterruptedException e) {
 					running = false;
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}
 
-		@Override
-		protected void handleError(Exception e) {
-			eventSource.sendEvent(new InternalException.InternalException(e));
-		}
-
 	}
 
-	private final class CommandTask extends Command {
+	private final class SenderCommand extends Command {
 
 		private static final int MAX_TRIES = 256;
 		private final QSYPacket packet;
 
-		public CommandTask(QSYPacket packet) {
+		public SenderCommand(QSYPacket packet) {
 			this.packet = packet;
 		}
 

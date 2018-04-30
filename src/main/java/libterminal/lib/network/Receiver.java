@@ -11,7 +11,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import main.java.libterminal.lib.protocol.QSYPacket;
 import main.java.libterminal.patterns.command.Command;
-import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
 import main.java.libterminal.patterns.observer.EventListener;
 import main.java.libterminal.patterns.observer.EventSourceI;
@@ -82,18 +81,18 @@ public final class Receiver implements EventSourceI<InternalEvent>, AutoCloseabl
 		}
 	}
 
-	private final class ReceiverTask extends TerminalRunnable {
+	private final class ReceiverTask implements Runnable {
 
 		private volatile boolean running = true;
 
 		@Override
-		protected void runTerminalTask() throws Exception {
+		public void run() {
 			while (running) {
-				Command task;
-				while ((task = pendingTasks.poll()) != null)
-					task.execute();
-
 				try {
+					Command task;
+					while ((task = pendingTasks.poll()) != null)
+						task.execute();
+
 					selector.select();
 					for (SelectionKey key : selector.selectedKeys()) {
 						if (key.isReadable()) {
@@ -115,13 +114,13 @@ public final class Receiver implements EventSourceI<InternalEvent>, AutoCloseabl
 					selector.selectedKeys().clear();
 				} catch (ClosedSelectorException e) {
 					running = false;
+				} catch (IllegalArgumentException e) {
+					// No se pudo construir el paquete recibido.
+					e.printStackTrace();
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
-		}
-
-		@Override
-		protected void handleError(Exception e) {
-			eventSource.sendEvent(new InternalEvent.InternalException(e));
 		}
 
 	}
@@ -157,7 +156,7 @@ public final class Receiver implements EventSourceI<InternalEvent>, AutoCloseabl
 		}
 
 		@Override
-		public void execute() {
+		public void execute() throws Exception {
 			if (buffers.containsKey(physicalId)) {
 				SelectionKey key = socket.keyFor(selector);
 				if (key != null)

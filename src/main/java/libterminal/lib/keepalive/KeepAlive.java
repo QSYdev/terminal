@@ -3,7 +3,6 @@ package main.java.libterminal.lib.keepalive;
 import java.util.TreeMap;
 
 import main.java.libterminal.lib.protocol.QSYPacket;
-import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
 import main.java.libterminal.patterns.observer.EventListener;
 import main.java.libterminal.patterns.observer.EventSourceI;
@@ -16,7 +15,7 @@ public final class KeepAlive implements EventSourceI<InternalEvent>, AutoCloseab
 
 	private static final int ERROR_RATE = 50;
 	private static final int MAX_ALLOWED_TIME = (int) ((1 + ERROR_RATE / 100f) * QSYPacket.KEEP_ALIVE_MS);
-	private static final byte MAX_TRIES = 1;
+	private static final byte MAX_TRIES = 5;
 	private static final int DEAD_NODES_PURGER_PERIOD = (int) (MAX_ALLOWED_TIME * 1.5f);
 
 	private final EventSource<InternalEvent> eventSource;
@@ -44,10 +43,6 @@ public final class KeepAlive implements EventSourceI<InternalEvent>, AutoCloseab
 
 	public void keepAlive(int physicalId) {
 		long currentTime = System.currentTimeMillis();
-		updateKeepAlive(physicalId, currentTime);
-	}
-
-	private void updateKeepAlive(int physicalId, long currentTime) {
 		synchronized (nodes) {
 			KeepAliveInfo info = nodes.get(physicalId);
 			if (info != null)
@@ -103,41 +98,36 @@ public final class KeepAlive implements EventSourceI<InternalEvent>, AutoCloseab
 
 	}
 
-	private final class DeadNodesPurgerTask extends TerminalRunnable {
+	private final class DeadNodesPurgerTask implements Runnable {
 
 		private volatile boolean running = true;
 
 		@Override
-		protected void runTerminalTask() {
+		public void run() {
 			while (running) {
 				try {
 					Thread.sleep(DEAD_NODES_PURGER_PERIOD);
 					long currentTime = System.currentTimeMillis();
 					synchronized (nodes) {
-						for (KeepAliveInfo info : nodes.values())
-							checkKeepAlive(info, currentTime);
+						for (KeepAliveInfo info : nodes.values()) {
+							// System.out.println(currentTime - info.lastKeepAliveReceived);
+							if (currentTime - info.lastKeepAliveReceived > MAX_ALLOWED_TIME) {
+								++info.tries;
+								if (info.tries >= MAX_TRIES)
+									eventSource.sendEvent(new InternalEvent.KeepAliveError(info.physicalId));
+							} else {
+								info.tries = 0;
+							}
+						}
 					}
 				} catch (InterruptedException e) {
 					running = false;
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
 		}
 
-		@Override
-		protected void handleError(Exception e) {
-			eventSource.sendEvent(new InternalEvent.InternalException(e));
-		}
-	}
-
-	private void checkKeepAlive(KeepAliveInfo info, long currentTime) {
-		// System.out.println(currentTime - info.lastKeepAliveReceived);
-		if (currentTime - info.lastKeepAliveReceived > MAX_ALLOWED_TIME) {
-			++info.tries;
-			if (info.tries >= MAX_TRIES)
-				eventSource.sendEvent(new InternalEvent.KeepAliveError(info.physicalId));
-		} else {
-			info.tries = 0;
-		}
 	}
 
 }

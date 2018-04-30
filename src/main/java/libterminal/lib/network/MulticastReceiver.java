@@ -9,7 +9,6 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 
 import main.java.libterminal.lib.protocol.QSYPacket;
-import main.java.libterminal.patterns.command.TerminalRunnable;
 import main.java.libterminal.patterns.observer.Event.InternalEvent;
 import main.java.libterminal.patterns.observer.EventListener;
 import main.java.libterminal.patterns.observer.EventSourceI;
@@ -70,12 +69,12 @@ public final class MulticastReceiver implements EventSourceI<InternalEvent>, Aut
 		}
 	}
 
-	private final class MulticastReceiverTask extends TerminalRunnable {
+	private final class MulticastReceiverTask implements Runnable {
 
 		private volatile boolean running = true;
 
 		@Override
-		protected void runTerminalTask() throws Exception {
+		public void run() {
 			while (running) {
 				try {
 					socket.receive(packet);
@@ -87,13 +86,13 @@ public final class MulticastReceiver implements EventSourceI<InternalEvent>, Aut
 					}
 				} catch (SocketException e) {
 					running = false;
+				} catch (IllegalArgumentException e) {
+					// No se pudo construir el paquete.
+					e.printStackTrace();
+				} catch (Exception e) {
+					e.printStackTrace();
 				}
 			}
-		}
-
-		@Override
-		protected void handleError(Exception e) {
-			eventSource.sendEvent(new InternalEvent.InternalException(e));
 		}
 
 	}

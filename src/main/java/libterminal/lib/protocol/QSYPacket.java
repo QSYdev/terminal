@@ -78,7 +78,7 @@ public class QSYPacket {
 		setDataIntoArray(configuration, (byte) 16, rawData, CONFIGURATION_INDEX);
 	}
 
-	public QSYPacket(final InetAddress nodeAddress, final byte[] data) {
+	public QSYPacket(final InetAddress nodeAddress, final byte[] data) throws IllegalArgumentException {
 		if (nodeAddress == null) {
 			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> La direccion del nodo debe ser valida");
 		} else if (data.length != PACKET_SIZE) {
