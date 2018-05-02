@@ -1,9 +1,9 @@
-package ar.com.terminal;
+package ar.com.terminal.internal;
 
-import ar.com.terminal.Event.InternalEvent.CloseSignal;
-import ar.com.terminal.Event.InternalEvent.IncomingPacket;
-import ar.com.terminal.Event.InternalEvent.InternalException;
-import ar.com.terminal.Event.InternalEvent.KeepAliveError;
+import ar.com.terminal.internal.InternalEvent.CloseSignal;
+import ar.com.terminal.internal.InternalEvent.IncomingPacket;
+import ar.com.terminal.internal.InternalEvent.InternalException;
+import ar.com.terminal.internal.InternalEvent.KeepAliveError;
 
 interface InternalEventVisitor {
 

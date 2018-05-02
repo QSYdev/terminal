@@ -1,8 +1,9 @@
-package ar.com.terminal;
+package ar.com.terminal.internal;
 
 import java.util.TreeMap;
 
-import ar.com.terminal.Event.InternalEvent;
+import ar.com.terminal.shared.EventListener;
+import ar.com.terminal.shared.QSYPacket;
 
 /**
  * La clase se encarga de llevar un control respecto de la desconexion de los

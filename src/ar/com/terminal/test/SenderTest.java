@@ -1,4 +1,4 @@
-package ar.com.test;
+package ar.com.terminal.test;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -9,10 +9,10 @@ import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import ar.com.terminal.Color;
-import ar.com.terminal.QSYPacket;
-import ar.com.terminal.Sender;
-import ar.com.terminal.QSYPacket.CommandArgs;
+import ar.com.terminal.internal.Sender;
+import ar.com.terminal.shared.Color;
+import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.shared.QSYPacket.CommandArgs;
 
 public class SenderTest {
 

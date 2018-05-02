@@ -1,18 +1,18 @@
-package ar.com.test;
+package ar.com.terminal.test;
 
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import ar.com.terminal.Color;
-import ar.com.terminal.Event.ExternalEvent;
-import ar.com.terminal.Event.ExternalEvent.ConnectedNode;
-import ar.com.terminal.Event.ExternalEvent.DisconnectedNode;
-import ar.com.terminal.Event.ExternalEvent.InternalException;
-import ar.com.terminal.Event.ExternalEvent.Touche;
-import ar.com.terminal.EventListener;
-import ar.com.terminal.ExternalEventVisitor;
-import ar.com.terminal.QSYPacket.CommandArgs;
-import ar.com.terminal.Terminal;
+import ar.com.terminal.internal.Terminal;
+import ar.com.terminal.shared.Color;
+import ar.com.terminal.shared.EventListener;
+import ar.com.terminal.shared.ExternalEvent;
+import ar.com.terminal.shared.ExternalEvent.ConnectedNode;
+import ar.com.terminal.shared.ExternalEvent.DisconnectedNode;
+import ar.com.terminal.shared.ExternalEvent.InternalException;
+import ar.com.terminal.shared.ExternalEvent.Touche;
+import ar.com.terminal.shared.ExternalEventVisitor;
+import ar.com.terminal.shared.QSYPacket.CommandArgs;
 
 public class TerminalTest {
 
@@ -98,7 +98,7 @@ public class TerminalTest {
 
 		@Override
 		public void visit(InternalException event) {
-			event.getExceptio().printStackTrace();
+			event.getException().printStackTrace();
 		}
 
 	}

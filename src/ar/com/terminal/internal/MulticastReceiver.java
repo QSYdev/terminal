@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package ar.com.terminal.internal;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -8,7 +8,8 @@ import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
 
-import ar.com.terminal.Event.InternalEvent;
+import ar.com.terminal.shared.EventListener;
+import ar.com.terminal.shared.QSYPacket;
 
 /**
  * Maneja los paquetes que se reciven por multicast. No es Thread-Safe.

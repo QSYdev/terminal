@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package ar.com.terminal.internal;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -6,13 +6,15 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.TreeMap;
 
-import ar.com.terminal.Event.ExternalEvent;
-import ar.com.terminal.Event.InternalEvent.CloseSignal;
-import ar.com.terminal.Event.InternalEvent.IncomingPacket;
-import ar.com.terminal.Event.InternalEvent.InternalException;
-import ar.com.terminal.Event.InternalEvent.KeepAliveError;
-import ar.com.terminal.QSYPacket.CommandArgs;
-import ar.com.terminal.QSYPacket.ToucheArgs;
+import ar.com.terminal.internal.InternalEvent.CloseSignal;
+import ar.com.terminal.internal.InternalEvent.IncomingPacket;
+import ar.com.terminal.internal.InternalEvent.InternalException;
+import ar.com.terminal.internal.InternalEvent.KeepAliveError;
+import ar.com.terminal.shared.EventListener;
+import ar.com.terminal.shared.ExternalEvent;
+import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.shared.QSYPacket.CommandArgs;
+import ar.com.terminal.shared.QSYPacket.ToucheArgs;
 
 public final class Terminal implements EventSourceI<ExternalEvent>, AutoCloseable {
 

@@ -1,12 +1,11 @@
-package ar.com.terminal;
+package ar.com.terminal.shared;
 
+import java.util.ArrayList;
 import java.util.Hashtable;
 
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
 public final class Color {
-
-	private static final byte MAX_AMOUNT_COLOR = 16;
 
 	public static final Color WHITE = new Color((byte) 0x0F, (byte) 0x0F, (byte) 0x0F);
 	public static final Color YELLOW = new Color((byte) 0x0F, (byte) 0x0F, (byte) 0x00);
@@ -30,29 +29,34 @@ public final class Color {
 		hashTable.put(NO_COLOR, "Sin Color");
 	}
 
+	private static final ArrayList<Color> colors;
+	static {
+		colors = new ArrayList<>(8);
+		colors.add(NO_COLOR);
+		colors.add(BLUE);
+		colors.add(GREEN);
+		colors.add(CYAN);
+		colors.add(RED);
+		colors.add(MAGENTA);
+		colors.add(YELLOW);
+		colors.add(WHITE);
+	}
+
 	private final byte red;
 	private final byte green;
 	private final byte blue;
 
 	private final int hashCode;
 
-	public Color(final byte red, final byte green, final byte blue) {
-		if (checkAmountOfColor(red) && checkAmountOfColor(green) && checkAmountOfColor(blue)) {
-			this.red = red;
-			this.green = green;
-			this.blue = blue;
-			final HashCodeBuilder hashBuilder = new HashCodeBuilder();
-			hashBuilder.append(red);
-			hashBuilder.append(green);
-			hashBuilder.append(blue);
-			this.hashCode = hashBuilder.toHashCode();
-		} else {
-			throw new IllegalArgumentException("<< COLOR >> La cantidad de color ingresada debe ser un valor entre 0 y " + MAX_AMOUNT_COLOR + "exclusive");
-		}
-	}
-
-	private boolean checkAmountOfColor(final byte color) {
-		return color >= 0 && color < MAX_AMOUNT_COLOR;
+	private Color(byte red, byte green, byte blue) {
+		this.red = red;
+		this.green = green;
+		this.blue = blue;
+		HashCodeBuilder hashBuilder = new HashCodeBuilder();
+		hashBuilder.append(red);
+		hashBuilder.append(green);
+		hashBuilder.append(blue);
+		this.hashCode = hashBuilder.toHashCode();
 	}
 
 	public byte getRed() {
@@ -69,7 +73,7 @@ public final class Color {
 
 	@Override
 	public String toString() {
-		final String result = hashTable.get(this);
+		String result = hashTable.get(this);
 		if (result == null)
 			return "RED = " + red + " || GREEN = " + green + " || BLUE = " + blue;
 		else
@@ -82,14 +86,25 @@ public final class Color {
 	}
 
 	@Override
-	public boolean equals(final Object obj) {
+	public boolean equals(Object obj) {
 		if (obj == this) {
 			return true;
 		} else if (obj instanceof Color) {
-			final Color c = (Color) obj;
+			Color c = (Color) obj;
 			return red == c.red && green == c.green && blue == c.blue;
 		} else {
 			return false;
+		}
+	}
+
+	public static final class ColorFactory {
+
+		public static Color createColor(byte red, byte green, byte blue) {
+			int redValue = (red == 0x0F) ? 1 : 0;
+			int greenValue = (green == 0x0F) ? 1 : 0;
+			int blueValue = (blue == 0x0F) ? 1 : 0;
+			int index = blueValue + greenValue * 2 + redValue * 4;
+			return colors.get(index);
 		}
 	}
 

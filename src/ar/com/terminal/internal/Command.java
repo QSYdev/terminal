@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package ar.com.terminal.internal;
 
 /**
  * Las clases que encapsulen un solo metodo a ejecutar en otro momento, deben

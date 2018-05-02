@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package ar.com.terminal.internal;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -6,7 +6,8 @@ import java.nio.channels.SocketChannel;
 import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import ar.com.terminal.Event.InternalEvent;
+import ar.com.terminal.shared.EventListener;
+import ar.com.terminal.shared.QSYPacket;
 
 /**
  * Envia asincronicamente paquetes a los diferentes nodos registrados. No es

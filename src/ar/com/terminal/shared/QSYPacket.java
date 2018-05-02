@@ -1,7 +1,9 @@
-package ar.com.terminal;
+package ar.com.terminal.shared;
 
 import java.net.InetAddress;
 import java.util.Arrays;
+
+import ar.com.terminal.shared.Color.ColorFactory;
 
 public class QSYPacket {
 
@@ -49,7 +51,7 @@ public class QSYPacket {
 	private final boolean sound;
 	private final byte[] rawData;
 
-	private QSYPacket(final InetAddress nodeAddress, final PacketType type, final int id, final Color color, final long delay, final int numberOfStep, final boolean touch, final boolean sound) {
+	private QSYPacket(InetAddress nodeAddress, PacketType type, int id, Color color, long delay, int numberOfStep, boolean touch, boolean sound) {
 		this.rawData = new byte[PACKET_SIZE];
 		rawData[Q_INDEX] = 'Q';
 		rawData[S_INDEX] = 'S';
@@ -76,7 +78,7 @@ public class QSYPacket {
 		setDataIntoArray(configuration, (byte) 16, rawData, CONFIGURATION_INDEX);
 	}
 
-	public QSYPacket(final InetAddress nodeAddress, final byte[] data) throws IllegalArgumentException {
+	public QSYPacket(InetAddress nodeAddress, byte[] data) throws IllegalArgumentException {
 		if (nodeAddress == null) {
 			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> La direccion del nodo debe ser valida");
 		} else if (data.length != PACKET_SIZE) {
@@ -92,25 +94,25 @@ public class QSYPacket {
 		this.delay = (long) convertBytesToLong(data, DELAY_INDEX, (byte) (DELAY_INDEX + 3));
 		this.numberOfStep = (int) convertBytesToLong(data, STEP_INDEX, (byte) (STEP_INDEX + 1));
 
-		final short configuration = (short) convertBytesToLong(data, CONFIGURATION_INDEX, (byte) (CONFIGURATION_INDEX + 1));
+		short configuration = (short) convertBytesToLong(data, CONFIGURATION_INDEX, (byte) (CONFIGURATION_INDEX + 1));
 		this.touch = ((configuration & 0x0002) == 0x0002);
 		this.sound = ((configuration & 0x0001) == 0x0001);
 		rawData = Arrays.copyOf(data, PACKET_SIZE);
 	}
 
-	private static Color getColorFromInt(final byte[] data) {
-		final byte red = (byte) convertBytesToLong(new byte[] { (byte) ((data[COLOR_RG_INDEX] >> 4) & 0x0F) }, (byte) 0, (byte) 0);
-		final byte green = (byte) convertBytesToLong(new byte[] { (byte) ((data[COLOR_RG_INDEX]) & 0x0F) }, (byte) 0, (byte) 0);
-		final byte blue = (byte) convertBytesToLong(new byte[] { (byte) ((data[COLOR_B_INDEX] >> 4) & 0x0F) }, (byte) 0, (byte) 0);
-		return new Color(red, green, blue);
+	private static Color getColorFromInt(byte[] data) {
+		byte red = (byte) convertBytesToLong(new byte[] { (byte) ((data[COLOR_RG_INDEX] >> 4) & 0x0F) }, (byte) 0, (byte) 0);
+		byte green = (byte) convertBytesToLong(new byte[] { (byte) ((data[COLOR_RG_INDEX]) & 0x0F) }, (byte) 0, (byte) 0);
+		byte blue = (byte) convertBytesToLong(new byte[] { (byte) ((data[COLOR_B_INDEX] >> 4) & 0x0F) }, (byte) 0, (byte) 0);
+		return ColorFactory.createColor(red, green, blue);
 	}
 
-	private static int getIntFromColor(final Color color) throws IllegalArgumentException {
+	private static int getIntFromColor(Color color) throws IllegalArgumentException {
 		return (int) (color.getRed() * Math.pow(2, 12) + color.getGreen() * Math.pow(2, 8) + color.getBlue() * Math.pow(2, 4));
 	}
 
-	private static PacketType getPacketTypeFromShort(final short type) {
-		final PacketType packetType;
+	private static PacketType getPacketTypeFromShort(short type) {
+		PacketType packetType;
 		switch (type) {
 		case TYPE_HELLO:
 			packetType = PacketType.Hello;
@@ -131,8 +133,8 @@ public class QSYPacket {
 		return packetType;
 	}
 
-	private static short getShortFromPacketType(final PacketType packetType) {
-		final short type;
+	private static short getShortFromPacketType(PacketType packetType) {
+		short type;
 		switch (packetType) {
 		case Hello: {
 			type = TYPE_HELLO;
@@ -193,7 +195,7 @@ public class QSYPacket {
 		return rawData;
 	}
 
-	private static long convertBytesToLong(final byte[] data, final byte firstIndex, final byte lastIndex) {
+	private static long convertBytesToLong(byte[] data, byte firstIndex, byte lastIndex) {
 		long value = 0;
 
 		long mul = 1;
@@ -209,7 +211,7 @@ public class QSYPacket {
 		return value;
 	}
 
-	private static void setDataIntoArray(final long value, final byte bits, final byte[] data, final int firstIndex) {
+	private static void setDataIntoArray(long value, byte bits, byte[] data, int firstIndex) {
 		long val = value;
 
 		long mul = 1;
@@ -225,7 +227,7 @@ public class QSYPacket {
 
 	@Override
 	public String toString() {
-		final StringBuilder stringBuilder = new StringBuilder();
+		StringBuilder stringBuilder = new StringBuilder();
 		switch (getType()) {
 		case Hello: {
 			stringBuilder.append("QSYHelloPacket");
@@ -254,14 +256,14 @@ public class QSYPacket {
 		return stringBuilder.toString();
 	}
 
-	public static QSYPacket createCommandPacket(final CommandArgs params) {
+	public static QSYPacket createCommandPacket(CommandArgs params) {
 
-		final int physicalId = params.getPhysicialId();
-		final Color color = params.getColor();
-		final long delay = params.getDelay();
-		final int numberOfStep = params.getNumberOfStep();
-		final boolean touchEnabled = params.isTouch();
-		final boolean soundEnabled = params.isSound();
+		int physicalId = params.getPhysicialId();
+		Color color = params.getColor();
+		long delay = params.getDelay();
+		int numberOfStep = params.getNumberOfStep();
+		boolean touchEnabled = params.isTouch();
+		boolean soundEnabled = params.isSound();
 
 		if (physicalId < MIN_ID_SIZE || physicalId > MAX_ID_SIZE) {
 			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> El id debe estar entre [" + MIN_ID_SIZE + " ; " + MAX_ID_SIZE + "]");
@@ -283,7 +285,7 @@ public class QSYPacket {
 		private final boolean touch;
 		private final boolean sound;
 
-		public CommandArgs(final int physicalId, final Color color, final long delay, final int numberOfStep, final boolean touch, final boolean sound) {
+		public CommandArgs(int physicalId, Color color, long delay, int numberOfStep, boolean touch, boolean sound) {
 			this.physicalId = physicalId;
 			this.color = color;
 			this.delay = delay;
@@ -292,7 +294,7 @@ public class QSYPacket {
 			this.sound = sound;
 		}
 
-		public CommandArgs(final int physicalId, final Color color, final long delay, final int numberOfStep) {
+		public CommandArgs(int physicalId, Color color, long delay, int numberOfStep) {
 			this(physicalId, color, delay, numberOfStep, false, false);
 		}
 
@@ -328,7 +330,7 @@ public class QSYPacket {
 		private final long delay;
 		private final Color color;
 
-		public ToucheArgs(final int physicalId, final long delay, final Color color) {
+		public ToucheArgs(int physicalId, long delay, Color color) {
 			this.physicalId = physicalId;
 			this.delay = delay;
 			this.color = color;

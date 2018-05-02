@@ -1,7 +1,10 @@
-package ar.com.terminal;
+package ar.com.terminal.internal;
 
 import java.util.LinkedList;
 import java.util.List;
+
+import ar.com.terminal.shared.Event;
+import ar.com.terminal.shared.EventListener;
 
 /**
  * La clase que permite enviar eventos a todos sus listenes.

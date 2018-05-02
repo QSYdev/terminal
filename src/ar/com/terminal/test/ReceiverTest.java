@@ -1,4 +1,4 @@
-package ar.com.test;
+package ar.com.terminal.test;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -9,12 +9,12 @@ import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import ar.com.terminal.EventListener;
-import ar.com.terminal.InternalEventVisitor;
-import ar.com.terminal.QSYPacket;
-import ar.com.terminal.Receiver;
-import ar.com.terminal.Event.IncomingPacket;
-import ar.com.terminal.Event.InternalException;
+import ar.com.terminal.internal.InternalEventVisitor;
+import ar.com.terminal.internal.Receiver;
+import ar.com.terminal.shared.EventListener;
+import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.shared.Event.IncomingPacket;
+import ar.com.terminal.shared.Event.InternalException;
 
 public class ReceiverTest implements AutoCloseable {
 

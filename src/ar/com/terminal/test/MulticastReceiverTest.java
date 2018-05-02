@@ -1,4 +1,4 @@
-package ar.com.test;
+package ar.com.terminal.test;
 
 import java.io.IOException;
 import java.net.Inet4Address;
@@ -7,12 +7,12 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import ar.com.terminal.EventListener;
-import ar.com.terminal.InternalEventVisitor;
-import ar.com.terminal.MulticastReceiver;
-import ar.com.terminal.QSYPacket;
-import ar.com.terminal.Event.IncomingPacket;
-import ar.com.terminal.Event.InternalException;
+import ar.com.terminal.internal.InternalEventVisitor;
+import ar.com.terminal.internal.MulticastReceiver;
+import ar.com.terminal.shared.EventListener;
+import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.shared.Event.IncomingPacket;
+import ar.com.terminal.shared.Event.InternalException;
 
 public class MulticastReceiverTest extends EventListener<InternalException> implements Runnable, InternalEventVisitor {
 
