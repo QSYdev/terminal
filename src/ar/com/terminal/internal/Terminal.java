@@ -71,8 +71,10 @@ public final class Terminal implements EventSourceI<ExternalEvent>, AutoCloseabl
 				return;
 			}
 		}
-		mainController.close();
-		mainController = null;
+		if (mainController != null) {
+			mainController.close();
+			mainController = null;
+		}
 	}
 
 	public synchronized int getConnectedNodes() {
