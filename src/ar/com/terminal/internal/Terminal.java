@@ -1,6 +1,5 @@
 package ar.com.terminal.internal;
 
-import java.io.IOException;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -189,7 +188,7 @@ public final class Terminal implements EventSourceI<ExternalEvent>, AutoCloseabl
 		eventSource.close();
 	}
 
-	private void createNode(QSYPacket packet) throws IOException {
+	private void createNode(QSYPacket packet) throws Exception {
 		try {
 			Node node = new Node(packet);
 			nodes.put(node.getPhysicalId(), node);
@@ -197,12 +196,13 @@ public final class Terminal implements EventSourceI<ExternalEvent>, AutoCloseabl
 			sender.newNode(node.getPhysicalId(), node.getNodeSocketChannel());
 			receiver.newNode(node.getPhysicalId(), node.getNodeSocketChannel());
 			eventSource.sendEvent(new ExternalEvent.ConnectedNode(node.getPhysicalId(), node.getNodeAddress()));
-		} finally {
+		} catch (Exception e) {
 			mutlticastReceiver.removeNode(packet.getPhysicalId());
+			throw e;
 		}
 	}
 
-	private void removeNode(Node node) throws IOException {
+	private void removeNode(Node node) throws Exception {
 		receiver.removeNode(node.getPhysicalId(), node.getNodeSocketChannel());
 		keepAlive.removeNode(node.getPhysicalId());
 		sender.removeNode(node.getPhysicalId());
