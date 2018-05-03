@@ -9,12 +9,11 @@ import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import ar.com.terminal.internal.InternalEventVisitor;
-import ar.com.terminal.internal.Receiver;
+import javax.sound.midi.Receiver;
+
+import ar.com.terminal.shared.Event.IncomingPacket;
 import ar.com.terminal.shared.EventListener;
 import ar.com.terminal.shared.QSYPacket;
-import ar.com.terminal.shared.Event.IncomingPacket;
-import ar.com.terminal.shared.Event.InternalException;
 
 public class ReceiverTest implements AutoCloseable {
 
@@ -43,8 +42,8 @@ public class ReceiverTest implements AutoCloseable {
 	}
 
 	public static void main(String[] args) throws IOException, InterruptedException {
-		final ReceiverTest receiver = new ReceiverTest();
-		final Scanner sc = new Scanner(System.in);
+		ReceiverTest receiver = new ReceiverTest();
+		Scanner sc = new Scanner(System.in);
 		while (sc.nextLine().charAt(0) != 'q')
 			;
 		sc.close();
@@ -58,24 +57,24 @@ public class ReceiverTest implements AutoCloseable {
 		@Override
 		public void run() {
 			try {
-				final ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+				ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
 				serverSocketChannel.socket().bind(new InetSocketAddress(Inet4Address.getByName("192.168.1.112"), QSYPacket.TCP_PORT));
 				while (running) {
-					final SocketChannel channel = serverSocketChannel.accept();
+					SocketChannel channel = serverSocketChannel.accept();
 					System.out.println("Se ha conectado un cliente");
 					channel.socket().setTcpNoDelay(true);
 					channel.configureBlocking(false);
 					receiver.newNode(i.getAndIncrement(), channel);
 				}
-			} catch (final ClosedByInterruptException e) {
+			} catch (ClosedByInterruptException e) {
 				running = false;
-			} catch (final IOException e) {
+			} catch (IOException e) {
 				e.printStackTrace();
 			}
 		}
 	}
 
-	private final class TerminalTask extends EventListener<InternalException> implements Runnable, InternalEventVisitor {
+	private final class TerminalTask extends EventListener<InternalEvent> implements Runnable, InternalEventVisitor {
 
 		private boolean running;
 
@@ -87,16 +86,16 @@ public class ReceiverTest implements AutoCloseable {
 		public void run() {
 			while (running) {
 				try {
-					final InternalException event = getEvent();
+					InternalEvent event = getEvent();
 					event.accept(this);
-				} catch (final InterruptedException e) {
+				} catch (InterruptedException e) {
 					running = false;
 				}
 			}
 		}
 
 		@Override
-		public void visit(final IncomingPacket event) {
+		public void visit(IncomingPacket event) {
 			System.out.println("Se recibió un paquete del nodo " + event.getPacket().getPhysicalId());
 		}
 

@@ -7,6 +7,7 @@ import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
 import java.net.SocketException;
+import java.util.TreeSet;
 
 import ar.com.terminal.shared.EventListener;
 import ar.com.terminal.shared.QSYPacket;
@@ -22,7 +23,9 @@ final class MulticastReceiver implements EventSourceI<InternalEvent>, AutoClosea
 	private final MulticastSocket socket;
 	private final DatagramPacket packet;
 
-	private volatile Boolean acceptPackets;
+	private final TreeSet<Integer> nodes;
+	private volatile boolean acceptPackets;
+
 	private volatile boolean closed;
 
 	public MulticastReceiver(InetAddress interfaceAddress, InetAddress multicastAddress, int port) throws SocketException, IOException {
@@ -32,6 +35,8 @@ final class MulticastReceiver implements EventSourceI<InternalEvent>, AutoClosea
 		this.eventSource = new EventSource<>();
 		this.packet = new DatagramPacket(new byte[QSYPacket.PACKET_SIZE], QSYPacket.PACKET_SIZE);
 		this.closed = false;
+
+		this.nodes = new TreeSet<>();
 		this.acceptPackets = false;
 
 		this.multicastReceiverTask = new Thread(new MulticastReceiverTask(), "MulticastReceiver");
@@ -39,8 +44,14 @@ final class MulticastReceiver implements EventSourceI<InternalEvent>, AutoClosea
 	}
 
 	public void acceptPackets(boolean acceptPackets) {
-		synchronized (this.acceptPackets) {
+		synchronized (nodes) {
 			this.acceptPackets = acceptPackets;
+		}
+	}
+
+	public void removeNode(int physicalId) {
+		synchronized (nodes) {
+			nodes.remove(physicalId);
 		}
 	}
 
@@ -76,10 +87,14 @@ final class MulticastReceiver implements EventSourceI<InternalEvent>, AutoClosea
 			while (running) {
 				try {
 					socket.receive(packet);
-					synchronized (acceptPackets) {
+					synchronized (nodes) {
 						if (acceptPackets) {
 							InetAddress sender = packet.getAddress();
-							eventSource.sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(sender, packet.getData())));
+							QSYPacket qsyPacket = new QSYPacket(sender, packet.getData());
+							if (!nodes.contains(qsyPacket.getPhysicalId())) {
+								nodes.add(qsyPacket.getPhysicalId());
+								eventSource.sendEvent(new InternalEvent.IncomingPacket(qsyPacket));
+							}
 						}
 					}
 				} catch (SocketException e) {

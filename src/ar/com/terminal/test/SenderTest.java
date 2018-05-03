@@ -9,7 +9,6 @@ import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import ar.com.terminal.internal.Sender;
 import ar.com.terminal.shared.Color;
 import ar.com.terminal.shared.QSYPacket;
 import ar.com.terminal.shared.QSYPacket.CommandArgs;
@@ -47,7 +46,7 @@ public class SenderTest {
 				switch (command) {
 				case 's':
 					for (int index = 0; index < i.get(); index++) {
-						final CommandArgs params = new CommandArgs(index, Color.CYAN, 500, 1, false, false);
+						CommandArgs params = new CommandArgs(index, Color.CYAN, 500, 1, false, false);
 						sender.command(QSYPacket.createCommandPacket(params));
 					}
 					break;
@@ -79,20 +78,20 @@ public class SenderTest {
 
 	private final class ServerTask implements Runnable {
 
-		private boolean running = true;
+		private volatile boolean running = true;
 
 		@Override
 		public void run() {
 			try {
-				final ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+				ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
 				serverSocketChannel.socket().bind(new InetSocketAddress(Inet4Address.getByName("192.168.1.106"), QSYPacket.TCP_PORT));
 				while (running) {
-					final SocketChannel channel = serverSocketChannel.accept();
+					SocketChannel channel = serverSocketChannel.accept();
 					channel.socket().setTcpNoDelay(true);
 					channel.configureBlocking(false);
 					sender.newNode(i.getAndIncrement(), channel);
 				}
-			} catch (final IOException e) {
+			} catch (IOException e) {
 				running = false;
 				e.printStackTrace();
 			}
@@ -108,7 +107,7 @@ public class SenderTest {
 		private final ByteBuffer byteBuffer;
 		private final byte[] data;
 
-		private boolean running = true;
+		private volatile boolean running = true;
 
 		public ClientTask() throws IOException {
 			byteBuffer = ByteBuffer.allocate(QSYPacket.PACKET_SIZE);
@@ -129,7 +128,7 @@ public class SenderTest {
 						System.out.println("El nodo id = " + id + " ha recibido un paquete");
 						byteBuffer.clear();
 					}
-				} catch (final IOException e) {
+				} catch (IOException e) {
 					running = false;
 					e.printStackTrace();
 				}

@@ -190,18 +190,23 @@ public final class Terminal implements EventSourceI<ExternalEvent>, AutoCloseabl
 	}
 
 	private void createNode(QSYPacket packet) throws IOException {
-		Node node = new Node(packet);
-		nodes.put(node.getPhysicalId(), node);
-		keepAlive.newNode(node.getPhysicalId());
-		sender.newNode(node.getPhysicalId(), node.getNodeSocketChannel());
-		receiver.newNode(node.getPhysicalId(), node.getNodeSocketChannel());
-		eventSource.sendEvent(new ExternalEvent.ConnectedNode(node.getPhysicalId(), node.getNodeAddress()));
+		try {
+			Node node = new Node(packet);
+			nodes.put(node.getPhysicalId(), node);
+			keepAlive.newNode(node.getPhysicalId());
+			sender.newNode(node.getPhysicalId(), node.getNodeSocketChannel());
+			receiver.newNode(node.getPhysicalId(), node.getNodeSocketChannel());
+			eventSource.sendEvent(new ExternalEvent.ConnectedNode(node.getPhysicalId(), node.getNodeAddress()));
+		} finally {
+			mutlticastReceiver.removeNode(packet.getPhysicalId());
+		}
 	}
 
 	private void removeNode(Node node) throws IOException {
 		receiver.removeNode(node.getPhysicalId(), node.getNodeSocketChannel());
-		sender.removeNode(node.getPhysicalId());
 		keepAlive.removeNode(node.getPhysicalId());
+		sender.removeNode(node.getPhysicalId());
+		mutlticastReceiver.removeNode(node.getPhysicalId());
 		nodes.remove(node.getPhysicalId());
 		node.close();
 		eventSource.sendEvent(new ExternalEvent.DisconnectedNode(node.getPhysicalId(), node.getNodeAddress()));

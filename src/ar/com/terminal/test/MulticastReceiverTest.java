@@ -7,44 +7,42 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import ar.com.terminal.internal.InternalEventVisitor;
-import ar.com.terminal.internal.MulticastReceiver;
 import ar.com.terminal.shared.EventListener;
 import ar.com.terminal.shared.QSYPacket;
-import ar.com.terminal.shared.Event.IncomingPacket;
-import ar.com.terminal.shared.Event.InternalException;
 
-public class MulticastReceiverTest extends EventListener<InternalException> implements Runnable, InternalEventVisitor {
+public final class MulticastReceiverTest extends EventListener<InternalEvent> implements Runnable, InternalEventVisitor {
 
-	private boolean running = true;
+	private volatile boolean running = true;
 
 	@Override
 	public void run() {
 		while (running) {
 			try {
-				final InternalException event = getEvent();
+				InternalEvent event = getEvent();
 				event.accept(this);
-			} catch (final InterruptedException e) {
+			} catch (InterruptedException e) {
 				running = false;
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		}
 	}
 
 	@Override
-	public void visit(final IncomingPacket event) {
+	public void visit(IncomingPacket event) {
 		System.out.println(event.getPacket().getPhysicalId());
 	}
 
 	public static void main(String[] args) throws SocketException, UnknownHostException, IOException, InterruptedException {
-		final MulticastReceiverTest test = new MulticastReceiverTest();
-		final Thread t = new Thread(test, "Test");
+		MulticastReceiverTest test = new MulticastReceiverTest();
+		Thread t = new Thread(test, "Test");
 		t.start();
 
-		final MulticastReceiver mr = new MulticastReceiver((Inet4Address) Inet4Address.getByName("192.168.1.112"), (InetAddress) InetAddress.getByName(QSYPacket.MULTICAST_ADDRESS),
+		MulticastReceiver mr = new MulticastReceiver((Inet4Address) Inet4Address.getByName("192.168.1.112"), (InetAddress) InetAddress.getByName(QSYPacket.MULTICAST_ADDRESS),
 				QSYPacket.MULTICAST_PORT);
 		mr.addListener(test);
 
-		final Scanner scanner = new Scanner(System.in);
+		Scanner scanner = new Scanner(System.in);
 		char command = 0;
 		do {
 			command = scanner.nextLine().charAt(0);
@@ -54,6 +52,9 @@ public class MulticastReceiverTest extends EventListener<InternalException> impl
 				break;
 			case 'f':
 				mr.acceptPackets(false);
+				break;
+			case 'd':
+				mr.removeNode(19);
 				break;
 			}
 
