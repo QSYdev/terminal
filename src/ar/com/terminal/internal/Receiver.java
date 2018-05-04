@@ -11,6 +11,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 
 import ar.com.terminal.shared.EventListener;
 import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.shared.QSYPacket.PacketType;
 
 /**
  * Maneja los paquetes que se reciben por algun socket. No es Thread-Safe.
@@ -102,8 +103,10 @@ final class Receiver implements EventSourceI<InternalEvent>, AutoCloseable {
 								if (byteBuffer.remaining() == 0) {
 									byteBuffer.flip();
 									byteBuffer.get(data);
-									eventSource.sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(channel.socket().getInetAddress(), data)));
 									byteBuffer.clear();
+									QSYPacket packet = new QSYPacket(channel.socket().getInetAddress(), data);
+									if (packet.getType() == PacketType.Keepalive || packet.getType() == PacketType.Touche)
+										eventSource.sendEvent(new InternalEvent.IncomingPacket(new QSYPacket(channel.socket().getInetAddress(), data)));
 								}
 							}
 						}

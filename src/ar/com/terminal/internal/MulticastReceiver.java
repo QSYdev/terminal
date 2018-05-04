@@ -11,6 +11,7 @@ import java.util.TreeSet;
 
 import ar.com.terminal.shared.EventListener;
 import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.shared.QSYPacket.PacketType;
 
 /**
  * Maneja los paquetes que se reciven por multicast. No es Thread-Safe.
@@ -91,7 +92,7 @@ final class MulticastReceiver implements EventSourceI<InternalEvent>, AutoClosea
 						if (acceptPackets) {
 							InetAddress sender = packet.getAddress();
 							QSYPacket qsyPacket = new QSYPacket(sender, packet.getData());
-							if (!nodes.contains(qsyPacket.getPhysicalId())) {
+							if (qsyPacket.getType() == PacketType.Hello && !nodes.contains(qsyPacket.getPhysicalId())) {
 								nodes.add(qsyPacket.getPhysicalId());
 								eventSource.sendEvent(new InternalEvent.IncomingPacket(qsyPacket));
 							}
