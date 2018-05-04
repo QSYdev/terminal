@@ -44,7 +44,7 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 	/**
 	 * Inicia el sistema, en caso de que exista una excepcion interna se garantiza
 	 * que se volvera al estado por defecto. Este metodo es necesario antes de
-	 * ejecutar cualquier otro.
+	 * ejecutar cualquier otro dentro de esta clase.
 	 */
 	public synchronized void start() throws Exception {
 		if (closed || running)
