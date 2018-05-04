@@ -7,8 +7,8 @@ import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.Scanner;
 
-import ar.com.terminal.shared.EventListener;
-import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.internal.EventListener;
+import ar.com.terminal.internal.QSYPacket;
 
 public final class MulticastReceiverTest extends EventListener<InternalEvent> implements Runnable, InternalEventVisitor {
 

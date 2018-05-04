@@ -11,9 +11,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.sound.midi.Receiver;
 
-import ar.com.terminal.shared.Event.IncomingPacket;
-import ar.com.terminal.shared.EventListener;
-import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.internal.EventListener;
+import ar.com.terminal.internal.QSYPacket;
+import ar.com.terminal.internal.Event.IncomingPacket;
 
 public class ReceiverTest implements AutoCloseable {
 

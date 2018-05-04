@@ -1,11 +1,11 @@
-package ar.com.terminal.shared;
+package ar.com.terminal.internal;
 
 import java.net.InetAddress;
 import java.util.Arrays;
 
-import ar.com.terminal.shared.Color.ColorFactory;
+import ar.com.terminal.internal.Color.ColorFactory;
 
-public class QSYPacket {
+public final class QSYPacket {
 
 	public static final long QSY_PROTOCOL_VERSION = 170901;
 

@@ -1,14 +1,11 @@
 package ar.com.terminal.internal;
 
-import ar.com.terminal.internal.InternalEvent.CloseSignal;
-import ar.com.terminal.internal.InternalEvent.IncomingPacket;
-import ar.com.terminal.internal.InternalEvent.InternalException;
-import ar.com.terminal.internal.InternalEvent.KeepAliveError;
-import ar.com.terminal.shared.EventListener;
+import ar.com.terminal.internal.Event.InternalEvent;
+import ar.com.terminal.internal.Event.InternalEvent.CloseSignal;
+import ar.com.terminal.internal.Event.InternalEvent.IncomingPacket;
+import ar.com.terminal.internal.Event.InternalEvent.InternalEventVisitor;
+import ar.com.terminal.internal.Event.InternalEvent.KeepAliveError;
 
-/**
- * No es Thread-Safe.
- */
 final class MainController extends EventListener<InternalEvent> implements AutoCloseable {
 
 	private final Terminal terminal;
@@ -55,17 +52,12 @@ final class MainController extends EventListener<InternalEvent> implements AutoC
 		}
 
 		@Override
-		public void visit(IncomingPacket event) {
+		public void visit(IncomingPacket event) throws Exception {
 			terminal.visit(event);
 		}
 
 		@Override
-		public void visit(InternalException event) {
-			terminal.visit(event);
-		}
-
-		@Override
-		public void visit(KeepAliveError event) {
+		public void visit(KeepAliveError event) throws Exception {
 			terminal.visit(event);
 		}
 

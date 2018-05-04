@@ -6,14 +6,9 @@ import java.nio.channels.SocketChannel;
 import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import ar.com.terminal.shared.EventListener;
-import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.internal.Event.InternalEvent;
 
-/**
- * Envia asincronicamente paquetes a los diferentes nodos registrados. No es
- * Thread-Safe.
- */
-final class Sender implements EventSourceI<InternalEvent>, AutoCloseable {
+final class Sender extends EventSourceI<InternalEvent> implements AutoCloseable {
 
 	private final EventSource<InternalEvent> eventSource;
 	private final LinkedBlockingQueue<Command> pendingTasks;

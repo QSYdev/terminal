@@ -1,10 +1,15 @@
-package ar.com.terminal.shared;
+package ar.com.terminal.internal;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
 
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 
+/**
+ * La clase Color se utiliza para encapsular colores en RGB. Las instancias
+ * definidas son de solo lectura y no permite la creacion de nuevos colores que
+ * no sean los que ya estan creados.
+ */
 public final class Color {
 
 	public static final Color WHITE = new Color((byte) 0x0F, (byte) 0x0F, (byte) 0x0F);
@@ -97,7 +102,7 @@ public final class Color {
 		}
 	}
 
-	public static final class ColorFactory {
+	static final class ColorFactory {
 
 		public static Color createColor(byte red, byte green, byte blue) {
 			int redValue = (red == 0x0F) ? 1 : 0;

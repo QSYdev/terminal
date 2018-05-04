@@ -3,21 +3,12 @@ package ar.com.terminal.internal;
 import java.util.LinkedList;
 import java.util.List;
 
-import ar.com.terminal.shared.Event;
-import ar.com.terminal.shared.EventListener;
+abstract class EventSourceI<T extends Event> {
 
-/**
- * La clase que permite enviar eventos a todos sus listenes.
- */
-interface EventSourceI<T extends Event> {
+	public abstract void addListener(EventListener<T> eventListener);
 
-	void addListener(EventListener<T> eventListener);
+	public abstract void removeListener(EventListener<T> eventListener);
 
-	void removeListener(EventListener<T> eventListener);
-
-	/**
-	 * La clase concreta de EventSourceI. Es Thread-Safe.
-	 */
 	static final class EventSource<T extends Event> implements AutoCloseable {
 
 		private final List<Runnable> pendingActions;

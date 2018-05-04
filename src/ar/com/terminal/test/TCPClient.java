@@ -9,9 +9,9 @@ import java.util.LinkedList;
 import java.util.Random;
 import java.util.Scanner;
 
-import ar.com.terminal.shared.Color;
-import ar.com.terminal.shared.QSYPacket;
-import ar.com.terminal.shared.QSYPacket.CommandArgs;
+import ar.com.terminal.internal.Color;
+import ar.com.terminal.internal.QSYPacket;
+import ar.com.terminal.internal.QSYPacket.CommandArgs;
 
 public final class TCPClient implements Runnable {
 

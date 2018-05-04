@@ -5,17 +5,20 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.TreeMap;
 
-import ar.com.terminal.internal.InternalEvent.CloseSignal;
-import ar.com.terminal.internal.InternalEvent.IncomingPacket;
-import ar.com.terminal.internal.InternalEvent.InternalException;
-import ar.com.terminal.internal.InternalEvent.KeepAliveError;
-import ar.com.terminal.shared.EventListener;
-import ar.com.terminal.shared.ExternalEvent;
-import ar.com.terminal.shared.QSYPacket;
-import ar.com.terminal.shared.QSYPacket.CommandArgs;
-import ar.com.terminal.shared.QSYPacket.ToucheArgs;
+import ar.com.terminal.internal.Event.ExternalEvent;
+import ar.com.terminal.internal.Event.InternalEvent.CloseSignal;
+import ar.com.terminal.internal.Event.InternalEvent.IncomingPacket;
+import ar.com.terminal.internal.Event.InternalEvent.KeepAliveError;
+import ar.com.terminal.internal.QSYPacket.CommandArgs;
+import ar.com.terminal.internal.QSYPacket.ToucheArgs;
 
-public final class Terminal implements EventSourceI<ExternalEvent>, AutoCloseable {
+/**
+ * La clase Terminal es la interfaz de comunicacion externa con las demas
+ * aplicaciones que decidan utilizar este sistema. Es una clase ThreadSafe por
+ * lo que puede ejecutarse asincronicamente desde multiples threads al mismo
+ * tiempo.
+ */
+public final class Terminal extends EventSourceI<ExternalEvent> implements AutoCloseable {
 
 	private final InetAddress interfaceAddress;
 	private final EventSource<ExternalEvent> eventSource;
@@ -38,25 +41,29 @@ public final class Terminal implements EventSourceI<ExternalEvent>, AutoCloseabl
 		this.running = false;
 	}
 
-	public synchronized void start() {
+	/**
+	 * Inicia el sistema, en caso de que exista una excepcion interna se garantiza
+	 * que se volvera al estado por defecto. Este metodo es necesario antes de
+	 * ejecutar cualquier otro.
+	 */
+	public synchronized void start() throws Exception {
 		if (closed || running)
 			return;
 
 		try {
-			running = true;
-			mainController = new MainController(this);
 			mutlticastReceiver = new MulticastReceiver(interfaceAddress, (InetAddress) InetAddress.getByName(QSYPacket.MULTICAST_ADDRESS), QSYPacket.MULTICAST_PORT);
-			keepAlive = new KeepAlive();
-			sender = new Sender();
 			receiver = new Receiver();
-
+			sender = new Sender();
+			keepAlive = new KeepAlive();
+			mainController = new MainController(this);
 			keepAlive.addListener(mainController);
 			sender.addListener(mainController);
 			receiver.addListener(mainController);
 			mutlticastReceiver.addListener(mainController);
+			running = true;
 		} catch (Exception e) {
-			e.printStackTrace();
-			eventSource.sendEvent(new ExternalEvent.InternalException(e));
+			visit(new CloseSignal());
+			throw e;
 		}
 	}
 
@@ -76,71 +83,70 @@ public final class Terminal implements EventSourceI<ExternalEvent>, AutoCloseabl
 		}
 	}
 
+	/**
+	 * Devuelve la cantidad de nodos conectados al sistema.
+	 */
 	public synchronized int getConnectedNodes() {
 		return (running) ? nodes.size() : 0;
 	}
 
+	/**
+	 * Inicia la busqueda de nuevos nodos conectados a la red.
+	 */
 	public synchronized void searchNodes() {
 		if (running)
 			mutlticastReceiver.acceptPackets(true);
 	}
 
+	/**
+	 * Finaliza la busqueda de nodos conectados a la red.
+	 */
 	public synchronized void finalizeNodesSearching() {
 		if (running)
 			mutlticastReceiver.acceptPackets(false);
 	}
 
+	/**
+	 * Envia un comando con los parametros especificados.
+	 */
 	public synchronized void sendCommand(CommandArgs params) {
 		if (running)
 			sender.command(QSYPacket.createCommandPacket(params));
 	}
 
-	synchronized void visit(KeepAliveError event) {
+	synchronized void visit(KeepAliveError event) throws Exception {
 		if (!running)
 			return;
 
-		try {
-			if (nodes.containsKey(event.getPhysicalId())) {
-				Node node = nodes.get(event.getPhysicalId());
-				removeNode(node);
-			}
-		} catch (Exception e) {
-			eventSource.sendEvent(new ExternalEvent.InternalException(e));
+		if (nodes.containsKey(event.getPhysicalId())) {
+			Node node = nodes.get(event.getPhysicalId());
+			removeNode(node);
 		}
 
 	}
 
-	synchronized void visit(IncomingPacket event) {
+	synchronized void visit(IncomingPacket event) throws Exception {
 		if (!running)
 			return;
 
-		try {
-			QSYPacket packet = event.getPacket();
+		QSYPacket packet = event.getPacket();
 
-			switch (packet.getType()) {
-			case Hello:
-				int physicalId = packet.getPhysicalId();
-				if (!nodes.containsKey(physicalId))
-					createNode(packet);
-				break;
-			case Touche:
-				keepAlive.touche(packet.getPhysicalId());
-				eventSource.sendEvent(new ExternalEvent.Touche(new ToucheArgs(packet.getPhysicalId(), packet.getDelay(), packet.getColor())));
-				break;
-			case Keepalive:
-				keepAlive.keepAlive(packet.getPhysicalId());
-				break;
-			default:
-				break;
-			}
-		} catch (Exception e) {
-			eventSource.sendEvent(new ExternalEvent.InternalException(e));
+		switch (packet.getType()) {
+		case Hello:
+			int physicalId = packet.getPhysicalId();
+			if (!nodes.containsKey(physicalId))
+				createNode(packet);
+			break;
+		case Touche:
+			keepAlive.touche(packet.getPhysicalId());
+			eventSource.sendEvent(new ExternalEvent.Touche(new ToucheArgs(packet.getPhysicalId(), packet.getDelay(), packet.getColor())));
+			break;
+		case Keepalive:
+			keepAlive.keepAlive(packet.getPhysicalId());
+			break;
+		default:
+			break;
 		}
-	}
-
-	synchronized void visit(InternalException internalError) {
-		if (running)
-			eventSource.sendEvent(new ExternalEvent.InternalException(internalError.getException()));
 	}
 
 	synchronized void visit(CloseSignal event) {

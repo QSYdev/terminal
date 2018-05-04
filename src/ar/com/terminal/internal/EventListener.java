@@ -1,11 +1,12 @@
-package ar.com.terminal.shared;
+package ar.com.terminal.internal;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 
 /**
- * La clase encargada de recibir asincronicamente los eventos que ocurren. Es
- * Trhead-Safe.
+ * Las clases que quieran recibir eventos asincronicamente deben extender de
+ * esta clase. La misma provee funcionalidades para depositar eventos en una
+ * cola bloqueante y ser atendidos desde el otro lado.
  */
 public class EventListener<T extends Event> {
 

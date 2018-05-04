@@ -1,24 +1,22 @@
 package ar.com.terminal.test;
 
-import java.net.UnknownHostException;
 import java.util.Scanner;
 
+import ar.com.terminal.internal.Color;
+import ar.com.terminal.internal.Event.ExternalEvent;
+import ar.com.terminal.internal.Event.ExternalEvent.ConnectedNode;
+import ar.com.terminal.internal.Event.ExternalEvent.DisconnectedNode;
+import ar.com.terminal.internal.Event.ExternalEvent.ExternalEventVisitor;
+import ar.com.terminal.internal.Event.ExternalEvent.Touche;
+import ar.com.terminal.internal.EventListener;
+import ar.com.terminal.internal.QSYPacket.CommandArgs;
 import ar.com.terminal.internal.Terminal;
-import ar.com.terminal.shared.Color;
-import ar.com.terminal.shared.EventListener;
-import ar.com.terminal.shared.ExternalEvent;
-import ar.com.terminal.shared.ExternalEvent.ConnectedNode;
-import ar.com.terminal.shared.ExternalEvent.DisconnectedNode;
-import ar.com.terminal.shared.ExternalEvent.InternalException;
-import ar.com.terminal.shared.ExternalEvent.Touche;
-import ar.com.terminal.shared.ExternalEventVisitor;
-import ar.com.terminal.shared.QSYPacket.CommandArgs;
 
 public class TerminalTest {
 
 	private static Terminal terminal;
 
-	public static void main(String[] args) throws UnknownHostException, InterruptedException {
+	public static void main(String[] args) throws Exception {
 		StressTask streesTask = null;
 		final EventTask task = new EventTask();
 		final Thread thread = new Thread(task, "Task");
@@ -26,9 +24,9 @@ public class TerminalTest {
 
 		terminal = new Terminal("192.168.1.112");
 		terminal.addListener(task);
-		final CommandArgs params = new CommandArgs(19, Color.CYAN, 500, 1, false, true);
+		CommandArgs params = new CommandArgs(19, Color.CYAN, 500, 1, false, true);
 
-		final Scanner scanner = new Scanner(System.in);
+		Scanner scanner = new Scanner(System.in);
 		char command = 0;
 		do {
 			command = scanner.next().charAt(0);
@@ -94,11 +92,6 @@ public class TerminalTest {
 		@Override
 		public void visit(Touche event) {
 			System.out.println("Se ha tocado el nodo " + event.getToucheArgs().getPhysicalId());
-		}
-
-		@Override
-		public void visit(InternalException event) {
-			event.getException().printStackTrace();
 		}
 
 	}

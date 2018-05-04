@@ -2,8 +2,8 @@ package ar.com.terminal.test;
 
 import java.util.Random;
 
-import ar.com.terminal.shared.EventListener;
-import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.internal.EventListener;
+import ar.com.terminal.internal.QSYPacket;
 
 public final class KeepAliveTest extends EventListener<InternalEvent> implements Runnable, InternalEventVisitor {
 

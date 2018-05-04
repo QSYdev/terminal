@@ -9,9 +9,9 @@ import java.nio.channels.SocketChannel;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import ar.com.terminal.shared.Color;
-import ar.com.terminal.shared.QSYPacket;
-import ar.com.terminal.shared.QSYPacket.CommandArgs;
+import ar.com.terminal.internal.Color;
+import ar.com.terminal.internal.QSYPacket;
+import ar.com.terminal.internal.QSYPacket.CommandArgs;
 
 public class SenderTest {
 

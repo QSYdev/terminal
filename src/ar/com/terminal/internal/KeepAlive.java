@@ -2,14 +2,9 @@ package ar.com.terminal.internal;
 
 import java.util.TreeMap;
 
-import ar.com.terminal.shared.EventListener;
-import ar.com.terminal.shared.QSYPacket;
+import ar.com.terminal.internal.Event.InternalEvent;
 
-/**
- * La clase se encarga de llevar un control respecto de la desconexion de los
- * nodos. No es Thread-Safe.
- */
-final class KeepAlive implements EventSourceI<InternalEvent>, AutoCloseable {
+final class KeepAlive extends EventSourceI<InternalEvent> implements AutoCloseable {
 
 	private static final int ERROR_RATE = 50;
 	private static final int MAX_ALLOWED_TIME = (int) ((1 + ERROR_RATE / 100f) * QSYPacket.KEEP_ALIVE_MS);

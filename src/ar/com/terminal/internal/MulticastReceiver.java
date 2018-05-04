@@ -9,14 +9,10 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.TreeSet;
 
-import ar.com.terminal.shared.EventListener;
-import ar.com.terminal.shared.QSYPacket;
-import ar.com.terminal.shared.QSYPacket.PacketType;
+import ar.com.terminal.internal.Event.InternalEvent;
+import ar.com.terminal.internal.QSYPacket.PacketType;
 
-/**
- * Maneja los paquetes que se reciven por multicast. No es Thread-Safe.
- */
-final class MulticastReceiver implements EventSourceI<InternalEvent>, AutoCloseable {
+final class MulticastReceiver extends EventSourceI<InternalEvent> implements AutoCloseable {
 
 	private final Thread multicastReceiverTask;
 
