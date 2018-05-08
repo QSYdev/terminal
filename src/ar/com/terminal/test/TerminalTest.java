@@ -2,15 +2,15 @@ package ar.com.terminal.test;
 
 import java.util.Scanner;
 
-import ar.com.terminal.internal.Color;
-import ar.com.terminal.internal.Event.ExternalEvent;
-import ar.com.terminal.internal.Event.ExternalEvent.ConnectedNode;
-import ar.com.terminal.internal.Event.ExternalEvent.DisconnectedNode;
-import ar.com.terminal.internal.Event.ExternalEvent.ExternalEventVisitor;
-import ar.com.terminal.internal.Event.ExternalEvent.Touche;
-import ar.com.terminal.internal.EventListener;
-import ar.com.terminal.internal.QSYPacket.CommandArgs;
-import ar.com.terminal.internal.Terminal;
+import ar.com.terminal.Color;
+import ar.com.terminal.EventListener;
+import ar.com.terminal.Terminal;
+import ar.com.terminal.Event.ExternalEvent;
+import ar.com.terminal.Event.ExternalEvent.ConnectedNode;
+import ar.com.terminal.Event.ExternalEvent.DisconnectedNode;
+import ar.com.terminal.Event.ExternalEvent.ExternalEventVisitor;
+import ar.com.terminal.Event.ExternalEvent.Touche;
+import ar.com.terminal.QSYPacket.CommandArgs;
 
 public class TerminalTest {
 
