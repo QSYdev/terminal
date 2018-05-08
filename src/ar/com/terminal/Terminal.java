@@ -29,6 +29,7 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 	private volatile Sender sender;
 	private volatile Receiver receiver;
 	private volatile MainController mainController;
+	private volatile Executor executor;
 
 	private volatile boolean running;
 	private volatile boolean closed;
@@ -51,6 +52,7 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 			return;
 
 		try {
+			executor = null;
 			mutlticastReceiver = new MulticastReceiver(interfaceAddress, (InetAddress) InetAddress.getByName(QSYPacket.MULTICAST_ADDRESS), QSYPacket.MULTICAST_PORT);
 			receiver = new Receiver();
 			sender = new Sender();
@@ -107,6 +109,27 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 	}
 
 	/**
+	 * Inicia una nueva rutina custom con los parametros proporcionados. En caso de
+	 * que una rutina ya estuviera ejecutandose, se finaliza y se inicia la nueva.
+	 */
+	public synchronized void startCustomRoutine() {
+		if (running && executor != null) {
+			// TODO crear la nueva rutina.
+		}
+	}
+
+	/**
+	 * Finaliza la rutina que se esta ejecutando actualmente. En caso de que no
+	 * hubiera ninguna, simplemente se ignora este metodo.
+	 */
+	public synchronized void stopRoutine() {
+		if (running && executor != null) {
+			executor.close();
+			executor = null;
+		}
+	}
+
+	/**
 	 * Envia un comando con los parametros especificados.
 	 */
 	public synchronized void sendCommand(CommandArgs params) {
@@ -139,6 +162,7 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 			break;
 		case Touche:
 			keepAlive.touche(packet.getPhysicalId());
+			executor.touche(packet.getPhysicalId());
 			eventSource.sendEvent(new ExternalEvent.Touche(new ToucheArgs(packet.getPhysicalId(), packet.getDelay(), packet.getColor())));
 			break;
 		case Keepalive:
@@ -178,6 +202,14 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 			e.printStackTrace();
 		}
 
+		try {
+			if (executor != null)
+				executor.close();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+
+		executor = null;
 		mutlticastReceiver = null;
 		keepAlive = null;
 		receiver = null;
@@ -209,6 +241,10 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 	}
 
 	private void removeNode(Node node) throws Exception {
+		if (executor != null && executor.contains(node.getPhysicalId())) {
+			executor.close();
+			executor = null;
+		}
 		receiver.removeNode(node.getPhysicalId(), node.getNodeSocketChannel());
 		keepAlive.removeNode(node.getPhysicalId());
 		sender.removeNode(node.getPhysicalId());
