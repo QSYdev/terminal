@@ -15,6 +15,8 @@ import ar.com.terminal.Routine.Step;
 
 abstract class Executor extends EventSourceI<InternalEvent> implements AutoCloseable {
 
+	private static volatile int STEP_INDEX = 0;
+
 	private final Terminal terminal;
 	private final EventSource<InternalEvent> eventSource;
 
@@ -23,15 +25,22 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 
 	private volatile Step currentStep;
 	private volatile ExpressionTree expressionTree;
+	private volatile boolean routineFinished;
 	private volatile int stepIndex;
 
 	private final Thread executionTimeOutTask;
 	private final Thread stepTimeOutTask;
 	private final Thread preInitTask;
 
+	private volatile boolean closed;
+
 	public Executor(Terminal terminal, ArrayList<Integer> nodesAssociations, long executionTimeOut) {
 		this.terminal = terminal;
 		this.eventSource = new EventSource<>();
+
+		this.stepIndex = -1;
+		this.closed = false;
+		this.routineFinished = false;
 
 		this.biMap = new BiMap(nodesAssociations);
 		this.touchedNodes = new boolean[nodesAssociations.size()];
@@ -39,13 +48,18 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		this.executionTimeOutTask = new Thread(new ExecutionTimeOutTask(executionTimeOut), "ExecutionTimeOut");
 		this.stepTimeOutTask = new Thread(new StepTimeOutTask(), "StepTimeOut");
 		this.preInitTask = new Thread(new PreInitTask(), "PreInit");
+
+		this.stepTimeOutTask.start();
 		this.preInitTask.start();
 	}
 
 	public void touche(int physicalId, int stepIndex, Color color, long delay) {
 		synchronized (this) {
-			int logicalId = biMap.getLogicalId(physicalId);
-			if (stepIndex == this.stepIndex) {
+			if (routineFinished)
+				return;
+
+			Integer logicalId = biMap.getLogicalId(physicalId);
+			if (logicalId != null && stepIndex == this.stepIndex) {
 				touchedNodes[logicalId] = true;
 				// TODO results.touche(logicalId, stepIndex, color, delay);
 				if (expressionTree.evaluateExpressionTree(touchedNodes)) {
@@ -55,7 +69,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 						prepareStep();
 					} else {
 						// TODO results.finish();
-						++stepIndex; // Se hace para cortar las demas entradas.
+						routineFinished = true;
 						eventSource.sendEvent(new InternalEvent.ExecutionFinished());
 					}
 				}
@@ -70,18 +84,20 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 	 */
 	public final boolean contains(int physicalId) {
 		synchronized (this) {
-			return biMap.contains(physicalId);
+			return (routineFinished) ? false : biMap.contains(physicalId);
 		}
 	}
 
 	private void startExecution() {
 		synchronized (this) {
-			// TODO results.start();
-			eventSource.sendEvent(new InternalEvent.ExecutionStarted());
-			currentStep = getNextStep();
-			turnAllNodes(Color.NO_COLOR);
-			prepareStep();
-			executionTimeOutTask.start();
+			if (!routineFinished) {
+				// TODO results.start();
+				eventSource.sendEvent(new InternalEvent.ExecutionStarted());
+				currentStep = getNextStep();
+				turnAllNodes(Color.NO_COLOR);
+				prepareStep();
+				executionTimeOutTask.start();
+			}
 		}
 	}
 
@@ -92,8 +108,9 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 	 */
 	private void turnAllNodes(Color color) {
 		synchronized (this) {
-			for (int i = 0; i < biMap.size(); i++) {
-				terminal.sendCommand(new CommandArgs(biMap.getPhysicalId(i), color, 0, 0), true);
+			if (!routineFinished) {
+				for (int i = 0; i < biMap.size(); i++)
+					terminal.sendCommand(new CommandArgs(biMap.getPhysicalId(i), color, 0, 0), true);
 			}
 		}
 	}
@@ -111,17 +128,17 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 	protected abstract boolean hasNextStep();
 
 	/*
-	 * Este metodo no es thread-safe.
+	 * Este metodo debe ejecutarse en un ambiente sincronico.
 	 */
 	private void prepareStep() {
-		++stepIndex;
+		stepIndex = STEP_INDEX = (++STEP_INDEX > Short.MAX_VALUE) ? 1 : STEP_INDEX;
+
 		long maxDelay = 0;
 		for (NodeConfiguration configuration : currentStep.getNodeConfigurationList()) {
 			int physicalId = biMap.getPhysicalId(configuration.getLogicalId());
 			long delay = configuration.getDelay();
-			if (delay > maxDelay) {
+			if (delay > maxDelay)
 				maxDelay = delay;
-			}
 			terminal.sendCommand(new CommandArgs(physicalId, configuration.getColor(), delay, stepIndex), true);
 		}
 
@@ -136,7 +153,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 	}
 
 	/*
-	 * Este metodo no es thread-safe.
+	 * Este metodo debe ejecutarse en un ambiente sincronico.
 	 */
 	private void finalizeStep() {
 		for (NodeConfiguration nodeConfiguration : currentStep.getNodeConfigurationList()) {
@@ -156,14 +173,28 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 
 	private void executionTimeOut() {
 		synchronized (this) {
-
+			if (!routineFinished) {
+				// TODO results.executionTimeOut();
+				routineFinished = true;
+				eventSource.sendEvent(new InternalEvent.ExecutionFinished());
+			}
 		}
 	}
 
 	private void stepTimeOut(int stepIndex) {
 		synchronized (this) {
-			if (stepIndex == this.stepIndex) {
+			if (!routineFinished && stepIndex == this.stepIndex) {
+				// TODO results.stepTimeout(stepIndex);
 				eventSource.sendEvent(new InternalEvent.StepTimeOut());
+				finalizeStep();
+				if (hasNextStep() && !currentStep.stopOnTimeOut()) {
+					currentStep = getNextStep();
+					prepareStep();
+				} else {
+					// TODO results.finish();
+					routineFinished = true;
+					eventSource.sendEvent(new InternalEvent.ExecutionFinished());
+				}
 			}
 		}
 	}
@@ -179,7 +210,42 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 	}
 
 	@Override
-	public abstract void close();
+	public void close() {
+		synchronized (this) {
+			if (closed)
+				return;
+
+			closed = true;
+			routineFinished = true;
+			preInitTask.interrupt();
+			try {
+				Field f = Thread.class.getDeclaredField("target");
+				f.setAccessible(true);
+				((StepTimeOutTask) f.get(stepTimeOutTask)).setStepTimeOut(-1, 0);
+				f.setAccessible(false);
+			} catch (Exception e) {
+			}
+			stepTimeOutTask.interrupt();
+			executionTimeOutTask.interrupt();
+		}
+
+		try {
+			preInitTask.join();
+		} catch (InterruptedException e) {
+		}
+
+		try {
+			stepTimeOutTask.join();
+		} catch (InterruptedException e) {
+		}
+
+		try {
+			executionTimeOutTask.join();
+		} catch (InterruptedException e) {
+		}
+
+		eventSource.close();
+	}
 
 	protected static final class BiMap {
 
@@ -199,11 +265,11 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 			return logicalIdNodes.containsKey(physicalId);
 		}
 
-		public int getLogicalId(int physicalId) {
+		public Integer getLogicalId(int physicalId) {
 			return logicalIdNodes.get(physicalId);
 		}
 
-		public int getPhysicalId(int logicalId) {
+		public Integer getPhysicalId(int logicalId) {
 			return physicalIdNodes.get(logicalId);
 		}
 
@@ -251,7 +317,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 			try {
 				if (executionTimeOut > 0) {
 					Thread.sleep(executionTimeOut);
-					// TODO executionTimeOut
+					executionTimeOut();
 				}
 			} catch (InterruptedException e) {
 			}

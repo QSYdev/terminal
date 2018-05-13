@@ -173,7 +173,8 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 			break;
 		case Touche:
 			keepAlive.touche(packet.getPhysicalId());
-			executor.touche(packet.getPhysicalId(), packet.getNumberOfStep(), packet.getColor(), packet.getDelay());
+			if (executor != null)
+				executor.touche(packet.getPhysicalId(), packet.getNumberOfStep(), packet.getColor(), packet.getDelay());
 			eventSource.sendEvent(new ExternalEvent.Touche(new ToucheArgs(packet.getPhysicalId(), packet.getDelay(), packet.getColor())));
 			break;
 		case Keepalive:

@@ -69,7 +69,7 @@ public final class Routine implements Iterable<Step> {
 			return timeOut;
 		}
 
-		public boolean getStopOnTimeout() {
+		public boolean stopOnTimeOut() {
 			return stopOnTimeout;
 		}
 
