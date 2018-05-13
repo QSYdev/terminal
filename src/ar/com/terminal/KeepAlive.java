@@ -13,7 +13,7 @@ final class KeepAlive extends EventSourceI<InternalEvent> implements AutoCloseab
 
 	private final EventSource<InternalEvent> eventSource;
 	private final TreeMap<Integer, KeepAliveInfo> nodes;
-	private final Thread deadNodesPurgerTask;
+	private final Thread keepAliveTask;
 
 	private volatile boolean closed;
 
@@ -21,8 +21,8 @@ final class KeepAlive extends EventSourceI<InternalEvent> implements AutoCloseab
 		this.eventSource = new EventSource<>();
 		this.nodes = new TreeMap<>();
 		this.closed = false;
-		this.deadNodesPurgerTask = new Thread(new DeadNodesPurgerTask(), "DeadsNodesPurger");
-		this.deadNodesPurgerTask.start();
+		this.keepAliveTask = new Thread(new KeepAliveTask(), "KeepAlive");
+		this.keepAliveTask.start();
 	}
 
 	public void newNode(int physicalId) {
@@ -67,9 +67,9 @@ final class KeepAlive extends EventSourceI<InternalEvent> implements AutoCloseab
 	public void close() throws InterruptedException {
 		if (!closed) {
 			closed = true;
-			deadNodesPurgerTask.interrupt();
+			keepAliveTask.interrupt();
 			try {
-				deadNodesPurgerTask.join();
+				keepAliveTask.join();
 			} finally {
 				nodes.clear();
 				eventSource.close();
@@ -91,7 +91,7 @@ final class KeepAlive extends EventSourceI<InternalEvent> implements AutoCloseab
 
 	}
 
-	private final class DeadNodesPurgerTask implements Runnable {
+	private final class KeepAliveTask implements Runnable {
 
 		private volatile boolean running = true;
 

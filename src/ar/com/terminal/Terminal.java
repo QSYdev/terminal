@@ -113,9 +113,14 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 	 * que una rutina ya estuviera ejecutandose, se finaliza y se inicia la nueva.
 	 */
 	public synchronized void startCustomRoutine() {
-		if (running && executor != null) {
-			// TODO crear la nueva rutina.
-		}
+		if (!running)
+			return;
+
+		if (executor != null)
+			executor.close();
+
+		// TODO crear la nueva rutina.
+		executor.addListener(mainController);
 	}
 
 	/**
@@ -133,7 +138,14 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 	 * Envia un comando con los parametros especificados.
 	 */
 	public synchronized void sendCommand(CommandArgs params) {
-		if (running)
+		sendCommand(params, false);
+	}
+
+	synchronized void sendCommand(CommandArgs params, boolean isExecutor) {
+		if (!running)
+			return;
+
+		if (isExecutor || executor == null || !executor.contains(params.getPhysicialId()))
 			sender.command(QSYPacket.createCommandPacket(params));
 	}
 
@@ -141,10 +153,9 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 		if (!running)
 			return;
 
-		if (nodes.containsKey(event.getPhysicalId())) {
-			Node node = nodes.get(event.getPhysicalId());
+		Node node = nodes.get(event.getPhysicalId());
+		if (node != null)
 			removeNode(node);
-		}
 
 	}
 
@@ -162,7 +173,7 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 			break;
 		case Touche:
 			keepAlive.touche(packet.getPhysicalId());
-			executor.touche(packet.getPhysicalId());
+			executor.touche(packet.getPhysicalId(), packet.getNumberOfStep(), packet.getColor(), packet.getDelay());
 			eventSource.sendEvent(new ExternalEvent.Touche(new ToucheArgs(packet.getPhysicalId(), packet.getDelay(), packet.getColor())));
 			break;
 		case Keepalive:

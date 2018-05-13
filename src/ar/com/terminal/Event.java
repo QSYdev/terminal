@@ -137,6 +137,15 @@ public abstract class Event {
 
 			public default void visit(CloseSignal event) throws Exception {
 			}
+
+			public default void visit(ExecutionStarted event) throws Exception {
+			}
+
+			public default void visit(ExecutionFinished executionFinished) throws Exception {
+			}
+
+			public default void visit(StepTimeOut stepTimeOut) throws Exception {
+			}
 		}
 
 		static final class KeepAliveError extends InternalEvent {
@@ -187,6 +196,40 @@ public abstract class Event {
 				visitor.visit(this);
 			}
 
+		}
+
+		static final class ExecutionStarted extends InternalEvent {
+
+			public ExecutionStarted() {
+			}
+
+			@Override
+			public void accept(InternalEventVisitor visitor) throws Exception {
+				visitor.visit(this);
+			}
+
+		}
+
+		static final class ExecutionFinished extends InternalEvent {
+
+			public ExecutionFinished() {
+			}
+
+			@Override
+			public void accept(InternalEventVisitor visitor) throws Exception {
+				visitor.visit(this);
+			}
+		}
+
+		static final class StepTimeOut extends InternalEvent {
+
+			public StepTimeOut() {
+			}
+
+			@Override
+			public void accept(InternalEventVisitor visitor) throws Exception {
+				visitor.visit(this);
+			}
 		}
 	}
 
