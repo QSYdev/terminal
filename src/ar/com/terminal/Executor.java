@@ -53,11 +53,6 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		this.preInitTask.start();
 	}
 
-	/**
-	 * Executor es notificado que ha llegado un touche al sistema. El metodo tiene
-	 * que ejecutarse sobre un bloque synchronized para proteger las variables
-	 * internas del sistema.
-	 */
 	public void touche(int physicalId, int stepIndex, Color color, long delay) {
 		synchronized (this) {
 			if (routineFinished)
@@ -82,11 +77,6 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 	}
 
-	/*
-	 * Determina si el id fisico que se envia esta siendo utilizado para esta
-	 * ejecucion. El Metodo tiene que ir en un bloque synchronized para proteger las
-	 * variables internas de bimap.
-	 */
 	public final boolean contains(int physicalId) {
 		synchronized (this) {
 			return (routineFinished) ? false : biMap.contains(physicalId);
@@ -106,11 +96,6 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 	}
 
-	/*
-	 * Envia un comando a todos los nodos con el color proporcionado. El Metodo
-	 * tiene que ir en un bloque synchronized para proteger las variables internas
-	 * de bimap.
-	 */
 	private void turnAllNodes(Color color) {
 		synchronized (this) {
 			if (!routineFinished) {
@@ -120,21 +105,10 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 	}
 
-	/*
-	 * Este metodo no necesita proteccion puesto que va a ser implementado por sus
-	 * herederos.
-	 */
 	protected abstract Step getNextStep();
 
-	/*
-	 * Este metodo no necesita proteccion puesto que va a ser implementado por sus
-	 * herederos.
-	 */
 	protected abstract boolean hasNextStep();
 
-	/*
-	 * Este metodo debe ejecutarse en un ambiente sincronico.
-	 */
 	private void prepareStep() {
 		stepIndex = STEP_INDEX = (++STEP_INDEX > Short.MAX_VALUE) ? 1 : STEP_INDEX;
 
@@ -151,15 +125,12 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		try {
 			Field f = Thread.class.getDeclaredField("target");
 			f.setAccessible(true);
-			((StepTimeOutTask) f.get(stepTimeOutTask)).setStepTimeOut(currentStep.getTimeOut(), stepIndex);
+			((StepTimeOutTask) f.get(stepTimeOutTask)).setStepTimeOut(currentStep.getTimeOut() + maxDelay, stepIndex);
 			f.setAccessible(false);
 		} catch (Exception e) {
 		}
 	}
 
-	/*
-	 * Este metodo debe ejecutarse en un ambiente sincronico.
-	 */
 	private void finalizeStep() {
 		for (NodeConfiguration nodeConfiguration : currentStep.getNodeConfigurationList()) {
 			int logicalId = nodeConfiguration.getLogicalId();
