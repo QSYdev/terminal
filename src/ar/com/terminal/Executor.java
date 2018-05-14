@@ -53,6 +53,11 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		this.preInitTask.start();
 	}
 
+	/**
+	 * Executor es notificado que ha llegado un touche al sistema. El metodo tiene
+	 * que ejecutarse sobre un bloque synchronized para proteger las variables
+	 * internas del sistema.
+	 */
 	public void touche(int physicalId, int stepIndex, Color color, long delay) {
 		synchronized (this) {
 			if (routineFinished)
