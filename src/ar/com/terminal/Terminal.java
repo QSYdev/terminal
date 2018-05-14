@@ -7,8 +7,11 @@ import java.util.TreeMap;
 
 import ar.com.terminal.Event.ExternalEvent;
 import ar.com.terminal.Event.InternalEvent.CloseSignal;
+import ar.com.terminal.Event.InternalEvent.ExecutionFinished;
+import ar.com.terminal.Event.InternalEvent.ExecutionStarted;
 import ar.com.terminal.Event.InternalEvent.IncomingPacket;
 import ar.com.terminal.Event.InternalEvent.KeepAliveError;
+import ar.com.terminal.Event.InternalEvent.StepTimeOut;
 import ar.com.terminal.QSYPacket.CommandArgs;
 import ar.com.terminal.QSYPacket.ToucheArgs;
 
@@ -110,9 +113,10 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 
 	/**
 	 * Inicia una nueva rutina custom con los parametros proporcionados. En caso de
-	 * que una rutina ya estuviera ejecutandose, se finaliza y se inicia la nueva.
+	 * que una rutina ya estuviera ejecutandose, se finaliza y se inicia la nueva
+	 * independientemente de si esta ultima arroja una excepcion.
 	 */
-	public synchronized void startCustomRoutine() {
+	public synchronized void startCustomRoutine() throws Exception {
 		if (!running)
 			return;
 
@@ -236,6 +240,27 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 		}
 		nodes.clear();
 		eventSource.close();
+	}
+
+	synchronized void visit(ExecutionStarted event) {
+		if (running)
+			eventSource.sendEvent(new ExternalEvent.ExecutionStarted());
+	}
+
+	synchronized void visit(ExecutionFinished event) {
+		if (!running)
+			return;
+
+		eventSource.sendEvent(new ExternalEvent.ExecutionFinished());
+		if (executor != null) {
+			executor.close();
+			executor = null;
+		}
+	}
+
+	synchronized void visit(StepTimeOut event) {
+		if (running)
+			eventSource.sendEvent(new ExternalEvent.ExecutionStarted());
 	}
 
 	private void createNode(QSYPacket packet) throws Exception {

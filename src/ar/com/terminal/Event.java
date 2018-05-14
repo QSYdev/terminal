@@ -39,6 +39,15 @@ public abstract class Event {
 			public default void visit(Touche event) {
 			}
 
+			public default void visit(ExecutionStarted event) {
+			}
+
+			public default void visit(ExecutionFinished event) {
+			}
+
+			public default void visit(StepTimeOut event) {
+			}
+
 		}
 
 		/**
@@ -118,6 +127,40 @@ public abstract class Event {
 			}
 		}
 
+		public static final class ExecutionStarted extends ExternalEvent {
+
+			public ExecutionStarted() {
+			}
+
+			@Override
+			public void accept(ExternalEventVisitor visitor) {
+				visitor.visit(this);
+			}
+
+		}
+
+		public static final class ExecutionFinished extends ExternalEvent {
+
+			public ExecutionFinished() {
+			}
+
+			@Override
+			public void accept(ExternalEventVisitor visitor) {
+				visitor.visit(this);
+			}
+		}
+
+		public static final class StepTimeOut extends ExternalEvent {
+
+			public StepTimeOut() {
+			}
+
+			@Override
+			public void accept(ExternalEventVisitor visitor) {
+				visitor.visit(this);
+			}
+		}
+
 	}
 
 	abstract static class InternalEvent extends Event {
@@ -129,23 +172,17 @@ public abstract class Event {
 
 		static interface InternalEventVisitor {
 
-			public default void visit(IncomingPacket event) throws Exception {
-			}
+			public abstract void visit(IncomingPacket event) throws Exception;
 
-			public default void visit(KeepAliveError event) throws Exception {
-			}
+			public abstract void visit(KeepAliveError event) throws Exception;
 
-			public default void visit(CloseSignal event) throws Exception {
-			}
+			public abstract void visit(CloseSignal event) throws Exception;
 
-			public default void visit(ExecutionStarted event) throws Exception {
-			}
+			public abstract void visit(ExecutionStarted event) throws Exception;
 
-			public default void visit(ExecutionFinished executionFinished) throws Exception {
-			}
+			public abstract void visit(ExecutionFinished event) throws Exception;
 
-			public default void visit(StepTimeOut stepTimeOut) throws Exception {
-			}
+			public abstract void visit(StepTimeOut event) throws Exception;
 		}
 
 		static final class KeepAliveError extends InternalEvent {

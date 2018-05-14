@@ -2,9 +2,12 @@ package ar.com.terminal;
 
 import ar.com.terminal.Event.InternalEvent;
 import ar.com.terminal.Event.InternalEvent.CloseSignal;
+import ar.com.terminal.Event.InternalEvent.ExecutionFinished;
+import ar.com.terminal.Event.InternalEvent.ExecutionStarted;
 import ar.com.terminal.Event.InternalEvent.IncomingPacket;
 import ar.com.terminal.Event.InternalEvent.InternalEventVisitor;
 import ar.com.terminal.Event.InternalEvent.KeepAliveError;
+import ar.com.terminal.Event.InternalEvent.StepTimeOut;
 
 final class MainController extends EventListener<InternalEvent> implements AutoCloseable {
 
@@ -65,6 +68,21 @@ final class MainController extends EventListener<InternalEvent> implements AutoC
 		public void visit(CloseSignal event) {
 			terminal.visit(event);
 			running = false;
+		}
+
+		@Override
+		public void visit(ExecutionStarted event) {
+			terminal.visit(event);
+		}
+
+		@Override
+		public void visit(ExecutionFinished event) throws Exception {
+			terminal.visit(event);
+		}
+
+		@Override
+		public void visit(StepTimeOut event) throws Exception {
+			terminal.visit(event);
 		}
 	}
 }
