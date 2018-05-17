@@ -260,7 +260,7 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 
 	synchronized void visit(StepTimeOut event) {
 		if (running)
-			eventSource.sendEvent(new ExternalEvent.ExecutionStarted());
+			eventSource.sendEvent(new ExternalEvent.StepTimeOut());
 	}
 
 	private void createNode(QSYPacket packet) throws Exception {

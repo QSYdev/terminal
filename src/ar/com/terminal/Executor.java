@@ -314,15 +314,15 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 
 		@Override
 		public void run() {
-			try {
-				while (running.get()) {
+			while (running.get()) {
+				try {
 					Entry<Long, Integer> entry = messages.take();
 					if (entry.getKey() > 0) {
 						Thread.sleep(entry.getKey());
 						stepTimeOut(entry.getValue());
 					}
+				} catch (InterruptedException e) {
 				}
-			} catch (InterruptedException e) {
 			}
 		}
 
