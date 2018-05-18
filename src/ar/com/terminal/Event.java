@@ -127,7 +127,7 @@ public abstract class Event {
 			}
 		}
 
-		public static final class ExecutionStarted extends ExternalEvent {
+		static final class ExecutionStarted extends ExternalEvent {
 
 			public ExecutionStarted() {
 			}
@@ -139,7 +139,7 @@ public abstract class Event {
 
 		}
 
-		public static final class ExecutionFinished extends ExternalEvent {
+		static final class ExecutionFinished extends ExternalEvent {
 
 			public ExecutionFinished() {
 			}
@@ -150,7 +150,7 @@ public abstract class Event {
 			}
 		}
 
-		public static final class StepTimeOut extends ExternalEvent {
+		static final class StepTimeOut extends ExternalEvent {
 
 			public StepTimeOut() {
 			}
