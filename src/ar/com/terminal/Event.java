@@ -48,6 +48,9 @@ public abstract class Event {
 			public default void visit(StepTimeOut event) {
 			}
 
+			public default void visit(ExecutionInterrupted event) {
+			}
+
 		}
 
 		/**
@@ -127,7 +130,11 @@ public abstract class Event {
 			}
 		}
 
-		static final class ExecutionStarted extends ExternalEvent {
+		/**
+		 * Evento que indica el inicio de una nueva rutina. Este evento se dispara tras
+		 * finalizar el proceso de preinicio.
+		 */
+		public static final class ExecutionStarted extends ExternalEvent {
 
 			public ExecutionStarted() {
 			}
@@ -139,7 +146,11 @@ public abstract class Event {
 
 		}
 
-		static final class ExecutionFinished extends ExternalEvent {
+		/**
+		 * Evento que indica el final de una rutina cuando la misma termina
+		 * naturalmente.
+		 */
+		public static final class ExecutionFinished extends ExternalEvent {
 
 			public ExecutionFinished() {
 			}
@@ -150,7 +161,10 @@ public abstract class Event {
 			}
 		}
 
-		static final class StepTimeOut extends ExternalEvent {
+		/**
+		 * Evento que indica que se ha producido un timeout en el paso actual.
+		 */
+		public static final class StepTimeOut extends ExternalEvent {
 
 			public StepTimeOut() {
 			}
@@ -159,6 +173,44 @@ public abstract class Event {
 			public void accept(ExternalEventVisitor visitor) {
 				visitor.visit(this);
 			}
+		}
+
+		/**
+		 * Evento que indica que la rutina no ha finalizado correctamente, si no que un
+		 * evento externo la ha interrumpido.
+		 */
+		public static final class ExecutionInterrupted extends ExternalEvent {
+
+			public static enum Reason {
+				NewRoutineStarted("Se ha interrumpido la rutina porque una nueva ha sido iniciada."), RoutineStopped("Se ha interrumpido la rutina manualmente."), Closed(
+						"Se ha interrumpido la rutina debido a que se ha cerrado la terminal."), DisconnectedNode("Se ha interrumpido la rutina porque un nodo involucrado se ha desconectado.");
+
+				private final String reason;
+
+				private Reason(String reason) {
+					this.reason = reason;
+				}
+
+				private String getReason() {
+					return reason;
+				}
+			}
+
+			private final Reason reason;
+
+			public ExecutionInterrupted(Reason reason) {
+				this.reason = reason;
+			}
+
+			public String getReason() {
+				return reason.getReason();
+			}
+
+			@Override
+			public void accept(ExternalEventVisitor visitor) {
+				visitor.visit(this);
+			}
+
 		}
 
 	}

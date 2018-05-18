@@ -1,20 +1,46 @@
 package test;
 
+import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.Scanner;
 
 import ar.com.terminal.Color;
 import ar.com.terminal.Event.ExternalEvent;
 import ar.com.terminal.Event.ExternalEvent.ConnectedNode;
 import ar.com.terminal.Event.ExternalEvent.DisconnectedNode;
+import ar.com.terminal.Event.ExternalEvent.ExecutionFinished;
+import ar.com.terminal.Event.ExternalEvent.ExecutionInterrupted;
+import ar.com.terminal.Event.ExternalEvent.ExecutionStarted;
 import ar.com.terminal.Event.ExternalEvent.ExternalEventVisitor;
+import ar.com.terminal.Event.ExternalEvent.StepTimeOut;
 import ar.com.terminal.Event.ExternalEvent.Touche;
 import ar.com.terminal.EventListener;
 import ar.com.terminal.QSYPacket.CommandArgs;
+import ar.com.terminal.Routine;
+import ar.com.terminal.Routine.NodeConfiguration;
+import ar.com.terminal.Routine.Step;
 import ar.com.terminal.Terminal;
 
 public final class TerminalTest {
 
 	private static Terminal terminal;
+	private static final Routine routine;
+	static {
+		ArrayList<Step> steps = new ArrayList<>(2);
+		{
+			LinkedList<NodeConfiguration> nodeConfigurationList = new LinkedList<>();
+			nodeConfigurationList.add(new NodeConfiguration(0, 0, Color.RED));
+			nodeConfigurationList.add(new NodeConfiguration(1, 0, Color.GREEN));
+			steps.add(new Step(nodeConfigurationList, 3000, "0|1", false));
+		}
+		{
+			LinkedList<NodeConfiguration> nodeConfigurationList = new LinkedList<>();
+			nodeConfigurationList.add(new NodeConfiguration(0, 0, Color.YELLOW));
+			nodeConfigurationList.add(new NodeConfiguration(1, 0, Color.BLUE));
+			steps.add(new Step(nodeConfigurationList, 1000, "0&1", false));
+		}
+		routine = new Routine(2, 2, 0, steps, "Prueba");
+	}
 
 	public static void main(String[] args) throws Exception {
 		StressTask streesTask = null;
@@ -28,24 +54,35 @@ public final class TerminalTest {
 		Scanner scanner = new Scanner(System.in);
 		char command = 0;
 		do {
-			command = scanner.next().charAt(0);
-			switch (command) {
-			case 's':
-				terminal.start();
-				break;
-			case 'n':
-				terminal.searchNodes();
-				break;
-			case 'e':
-				if (streesTask == null)
-					streesTask = new StressTask();
-				break;
-			case 'f':
-				terminal.finalizeNodesSearching();
-				break;
-			case 'c':
-				System.out.println(terminal.getConnectedNodes());
-				break;
+			try {
+				command = scanner.next().charAt(0);
+				switch (command) {
+				case 's':
+					terminal.start();
+					break;
+				case 'n':
+					terminal.searchNodes();
+					break;
+				case 'e':
+					if (streesTask == null)
+						streesTask = new StressTask();
+					break;
+				case 'f':
+					terminal.finalizeNodesSearching();
+					break;
+				case 'c':
+					System.out.println(terminal.getConnectedNodes());
+					break;
+				case 'r':
+					terminal.startCustomRoutine(routine);
+					break;
+				case 'y':
+					terminal.stopRoutine();
+					break;
+				}
+
+			} catch (Exception e) {
+				e.printStackTrace();
 			}
 		} while (command != 'q');
 
@@ -91,6 +128,26 @@ public final class TerminalTest {
 		@Override
 		public void visit(Touche event) {
 			System.out.println("Se ha tocado el nodo " + event.getToucheArgs().getPhysicalId());
+		}
+
+		@Override
+		public void visit(ExecutionStarted event) {
+			System.out.println("Rutina Iniciada");
+		}
+
+		@Override
+		public void visit(ExecutionFinished event) {
+			System.out.println("Rutina terminada");
+		}
+
+		@Override
+		public void visit(StepTimeOut event) {
+			System.out.println("Step Time Out");
+		}
+
+		@Override
+		public void visit(ExecutionInterrupted event) {
+			System.out.println(event.getReason());
 		}
 
 	}

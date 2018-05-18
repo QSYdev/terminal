@@ -86,8 +86,8 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 	private void startExecution() {
 		synchronized (this) {
 			if (!routineFinished) {
-				// TODO results.start();
 				eventSource.sendEvent(new InternalEvent.ExecutionStarted());
+				// TODO results.start();
 				currentStep = getNextStep();
 				turnAllNodes(Color.NO_COLOR);
 				prepareStep();

@@ -3,9 +3,12 @@ package ar.com.terminal;
 import java.net.Inet4Address;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.TreeMap;
 
 import ar.com.terminal.Event.ExternalEvent;
+import ar.com.terminal.Event.ExternalEvent.ExecutionInterrupted.Reason;
 import ar.com.terminal.Event.InternalEvent.CloseSignal;
 import ar.com.terminal.Event.InternalEvent.ExecutionFinished;
 import ar.com.terminal.Event.InternalEvent.ExecutionStarted;
@@ -114,16 +117,28 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 	/**
 	 * Inicia una nueva rutina custom con los parametros proporcionados. En caso de
 	 * que una rutina ya estuviera ejecutandose, se finaliza y se inicia la nueva
-	 * independientemente de si esta ultima arroja una excepcion.
+	 * independientemente de si esta ultima arroja una excepcion. Adicionalmente se
+	 * eligen los nodos involucrados en la rutina aleatoriamente.
 	 */
-	public synchronized void startCustomRoutine() throws Exception {
+	public synchronized void startCustomRoutine(Routine routine) throws Exception {
 		if (!running)
 			return;
 
-		if (executor != null)
+		if (executor != null) {
 			executor.close();
+			executor = null;
+			eventSource.sendEvent(new ExternalEvent.ExecutionInterrupted(Reason.NewRoutineStarted));
+		}
 
-		// TODO crear la nueva rutina.
+		if (nodes.size() < routine.getNumberOfNodes())
+			throw new IllegalArgumentException("No hay suficiente cantidad de nodos conectados");
+
+		Iterator<Integer> physicalIds = nodes.keySet().iterator();
+		ArrayList<Integer> nodesAssociations = new ArrayList<>(routine.getNumberOfNodes());
+		for (int i = 0; i < routine.getNumberOfNodes(); i++)
+			nodesAssociations.add(physicalIds.next());
+
+		executor = new CustomExecutor(this, nodesAssociations, routine);
 		executor.addListener(mainController);
 	}
 
@@ -135,6 +150,7 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 		if (running && executor != null) {
 			executor.close();
 			executor = null;
+			eventSource.sendEvent(new ExternalEvent.ExecutionInterrupted(Reason.RoutineStopped));
 		}
 	}
 
@@ -220,8 +236,10 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 		}
 
 		try {
-			if (executor != null)
+			if (executor != null) {
 				executor.close();
+				eventSource.sendEvent(new ExternalEvent.ExecutionInterrupted(Reason.Closed));
+			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -283,6 +301,7 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 			if (executor != null && executor.contains(node.getPhysicalId())) {
 				executor.close();
 				executor = null;
+				eventSource.sendEvent(new ExternalEvent.ExecutionInterrupted(Reason.DisconnectedNode));
 			}
 			receiver.removeNode(node.getPhysicalId(), node.getNodeSocketChannel());
 			keepAlive.removeNode(node.getPhysicalId());

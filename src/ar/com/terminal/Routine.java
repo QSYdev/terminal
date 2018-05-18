@@ -8,13 +8,13 @@ import ar.com.terminal.Routine.Step;
 
 public final class Routine implements Iterable<Step> {
 
-	private final byte playersCount;
-	private final byte numberOfNodes;
+	private final int playersCount;
+	private final int numberOfNodes;
 	private final long totalTimeOut;
 	private String name;
 	private final ArrayList<Step> steps;
 
-	public Routine(byte playersCount, byte numberOfNodes, long totalTimeOut, ArrayList<Step> steps, String name) {
+	public Routine(int playersCount, int numberOfNodes, long totalTimeOut, ArrayList<Step> steps, String name) {
 		this.playersCount = playersCount;
 		this.numberOfNodes = numberOfNodes;
 		this.totalTimeOut = totalTimeOut;
@@ -22,11 +22,11 @@ public final class Routine implements Iterable<Step> {
 		this.name = name;
 	}
 
-	public byte getPlayersCount() {
+	public int getPlayersCount() {
 		return playersCount;
 	}
 
-	public byte getNumberOfNodes() {
+	public int getNumberOfNodes() {
 		return numberOfNodes;
 	}
 
