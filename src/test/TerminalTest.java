@@ -1,18 +1,18 @@
-package ar.com.terminal.test;
+package test;
 
 import java.util.Scanner;
 
 import ar.com.terminal.Color;
-import ar.com.terminal.EventListener;
-import ar.com.terminal.Terminal;
 import ar.com.terminal.Event.ExternalEvent;
 import ar.com.terminal.Event.ExternalEvent.ConnectedNode;
 import ar.com.terminal.Event.ExternalEvent.DisconnectedNode;
 import ar.com.terminal.Event.ExternalEvent.ExternalEventVisitor;
 import ar.com.terminal.Event.ExternalEvent.Touche;
+import ar.com.terminal.EventListener;
 import ar.com.terminal.QSYPacket.CommandArgs;
+import ar.com.terminal.Terminal;
 
-public class TerminalTest {
+public final class TerminalTest {
 
 	private static Terminal terminal;
 
@@ -24,7 +24,6 @@ public class TerminalTest {
 
 		terminal = new Terminal("192.168.1.112");
 		terminal.addListener(task);
-		CommandArgs params = new CommandArgs(19, Color.CYAN, 500, 1, false, true);
 
 		Scanner scanner = new Scanner(System.in);
 		char command = 0;
@@ -45,7 +44,7 @@ public class TerminalTest {
 				terminal.finalizeNodesSearching();
 				break;
 			case 'c':
-				terminal.sendCommand(params);
+				System.out.println(terminal.getConnectedNodes());
 				break;
 			}
 		} while (command != 'q');
@@ -113,7 +112,7 @@ public class TerminalTest {
 				try {
 					Thread.sleep(1000);
 					for (int i = 1; i <= terminal.getConnectedNodes(); i++) {
-						terminal.sendCommand(new CommandArgs(19, Color.CYAN, 500, 3));
+						terminal.sendCommand(new CommandArgs(17 + i, Color.CYAN, 500, 3));
 					}
 				} catch (InterruptedException e) {
 					running = false;

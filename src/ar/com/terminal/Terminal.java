@@ -139,17 +139,18 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 	}
 
 	/**
-	 * Envia un comando con los parametros especificados.
+	 * Envia un comando con los parametros especificados. En caso de que el command
+	 * fuera para un nodo involucrado en una rutina, el mismo es descartado.
 	 */
 	public synchronized void sendCommand(CommandArgs params) {
 		sendCommand(params, false);
 	}
 
-	synchronized void sendCommand(CommandArgs params, boolean isExecutor) {
+	synchronized void sendCommand(CommandArgs params, boolean messageFromExecutor) {
 		if (!running)
 			return;
 
-		if (isExecutor || executor == null || !executor.contains(params.getPhysicialId()))
+		if (messageFromExecutor || executor == null || !executor.contains(params.getPhysicialId()))
 			sender.command(QSYPacket.createCommandPacket(params));
 	}
 
@@ -278,17 +279,20 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 	}
 
 	private void removeNode(Node node) throws Exception {
-		if (executor != null && executor.contains(node.getPhysicalId())) {
-			executor.close();
-			executor = null;
+		try {
+			if (executor != null && executor.contains(node.getPhysicalId())) {
+				executor.close();
+				executor = null;
+			}
+			receiver.removeNode(node.getPhysicalId(), node.getNodeSocketChannel());
+			keepAlive.removeNode(node.getPhysicalId());
+			sender.removeNode(node.getPhysicalId());
+			mutlticastReceiver.removeNode(node.getPhysicalId());
+			nodes.remove(node.getPhysicalId());
+			node.close();
+		} finally {
+			eventSource.sendEvent(new ExternalEvent.DisconnectedNode(node.getPhysicalId(), node.getNodeAddress()));
 		}
-		receiver.removeNode(node.getPhysicalId(), node.getNodeSocketChannel());
-		keepAlive.removeNode(node.getPhysicalId());
-		sender.removeNode(node.getPhysicalId());
-		mutlticastReceiver.removeNode(node.getPhysicalId());
-		nodes.remove(node.getPhysicalId());
-		node.close();
-		eventSource.sendEvent(new ExternalEvent.DisconnectedNode(node.getPhysicalId(), node.getNodeAddress()));
 	}
 
 	@Override

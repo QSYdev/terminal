@@ -77,7 +77,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 	}
 
-	public final boolean contains(int physicalId) {
+	public boolean contains(int physicalId) {
 		synchronized (this) {
 			return (routineFinished) ? false : biMap.contains(physicalId);
 		}
