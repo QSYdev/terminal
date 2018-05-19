@@ -142,6 +142,41 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 		executor.addListener(mainController);
 	}
 
+	public synchronized void startPlayerExecution(int numberOfNodes, ArrayList<Color> playersAndColors, boolean waitForAllPlayers, long stepDelay, long stepTimeOut, boolean stopOnStepTimeOut,
+			int numberOfSteps, long executionTimeOut) throws Exception {
+
+		if (!running)
+			return;
+
+		if (executor != null) {
+			executor.close();
+			executor = null;
+			eventSource.sendEvent(new ExternalEvent.ExecutionInterrupted(Reason.NewRoutineStarted));
+		}
+
+		if (numberOfNodes <= 0)
+			throw new IllegalArgumentException("Debe ingresar una cantidad de nodos mayor a 0.");
+		else if (playersAndColors.size() <= 0)
+			throw new IllegalArgumentException("La cantidad de jugadores debe ser mayor a 0.");
+		else if (stepDelay < 0)
+			throw new IllegalArgumentException("El delay de cada paso debe ser mayor o igual a 0.");
+		else if (stepTimeOut < 0)
+			throw new IllegalArgumentException("El timeout de cada paso debe ser mayor o igual a 0.");
+		else if (numberOfSteps <= 0 && executionTimeOut <= 0)
+			throw new IllegalArgumentException("La cantidad total de pasos y el tiempo limite de ejecucion no pueden ser ambos menores o iguales a 0.");
+
+		numberOfSteps = (numberOfSteps < 0) ? 0 : numberOfSteps;
+		executionTimeOut = (executionTimeOut < 0) ? 0 : executionTimeOut;
+
+		Iterator<Integer> physicalIds = nodes.keySet().iterator();
+		ArrayList<Integer> nodesAssociations = new ArrayList<>(numberOfNodes);
+		for (int i = 0; i < numberOfNodes; i++)
+			nodesAssociations.add(physicalIds.next());
+
+		executor = new PlayerExecutor(this, nodesAssociations, playersAndColors, waitForAllPlayers, stepDelay, stepTimeOut, stopOnStepTimeOut, numberOfSteps, executionTimeOut);
+		executor.addListener(mainController);
+	}
+
 	/**
 	 * Finaliza la rutina que se esta ejecutando actualmente. En caso de que no
 	 * hubiera ninguna, simplemente se ignora este metodo.

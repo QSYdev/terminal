@@ -15,6 +15,11 @@ final class CustomExecutor extends Executor {
 	}
 
 	@Override
+	protected void toucheEvent(int physicalId, int stepIndex, Color color, long delay) {
+		return;
+	}
+
+	@Override
 	protected Step getNextStep() {
 		return steps.next();
 	}
@@ -22,6 +27,11 @@ final class CustomExecutor extends Executor {
 	@Override
 	protected boolean hasNextStep() {
 		return steps.hasNext();
+	}
+
+	@Override
+	protected void stepTimeOutEvent(int stepIndex) {
+		return;
 	}
 
 }

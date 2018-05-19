@@ -53,13 +53,14 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		this.preInitTask.start();
 	}
 
-	public void touche(int physicalId, int stepIndex, Color color, long delay) {
+	public final void touche(int physicalId, int stepIndex, Color color, long delay) {
 		synchronized (this) {
 			if (routineFinished)
 				return;
 
 			Integer logicalId = biMap.getLogicalId(physicalId);
 			if (logicalId != null && stepIndex == this.stepIndex) {
+				toucheEvent(physicalId, stepIndex, color, delay);
 				touchedNodes[logicalId] = true;
 				// TODO results.touche(logicalId, stepIndex, color, delay);
 				if (expressionTree.evaluateExpressionTree(touchedNodes)) {
@@ -77,7 +78,9 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 	}
 
-	public boolean contains(int physicalId) {
+	protected abstract void toucheEvent(int physicalId, int stepIndex, Color color, long delay);
+
+	public final boolean contains(int physicalId) {
 		synchronized (this) {
 			return (routineFinished) ? false : biMap.contains(physicalId);
 		}
@@ -160,6 +163,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 	private void stepTimeOut(int stepIndex) {
 		synchronized (this) {
 			if (!routineFinished && stepIndex == this.stepIndex) {
+				stepTimeOutEvent(stepIndex);
 				// TODO results.stepTimeout(stepIndex);
 				eventSource.sendEvent(new InternalEvent.StepTimeOut());
 				finalizeStep();
@@ -175,18 +179,20 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 	}
 
+	protected abstract void stepTimeOutEvent(int stepIndex);
+
 	@Override
-	public void addListener(EventListener<InternalEvent> eventListener) {
+	public final void addListener(EventListener<InternalEvent> eventListener) {
 		eventSource.addListener(eventListener);
 	}
 
 	@Override
-	public void removeListener(EventListener<InternalEvent> eventListener) {
+	public final void removeListener(EventListener<InternalEvent> eventListener) {
 		eventSource.removeListener(eventListener);
 	}
 
 	@Override
-	public void close() {
+	public final void close() {
 		synchronized (this) {
 			if (closed)
 				return;
@@ -223,7 +229,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		eventSource.close();
 	}
 
-	protected static final class BiMap {
+	private static final class BiMap {
 
 		private final ArrayList<Integer> physicalIdNodes;
 		private final TreeMap<Integer, Integer> logicalIdNodes;
