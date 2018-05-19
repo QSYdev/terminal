@@ -79,6 +79,12 @@ public final class TerminalTest {
 				case 'y':
 					terminal.stopRoutine();
 					break;
+				case 'p':
+					ArrayList<Color> playersAndColors = new ArrayList<>();
+					playersAndColors.add(Color.RED);
+					playersAndColors.add(Color.GREEN);
+					terminal.startPlayerExecution(3, playersAndColors, false, 0, 500, false, 100, 10000);
+					break;
 				}
 
 			} catch (Exception e) {

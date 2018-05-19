@@ -116,19 +116,12 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 
 	/**
 	 * Inicia una nueva rutina custom con los parametros proporcionados. En caso de
-	 * que una rutina ya estuviera ejecutandose, se finaliza y se inicia la nueva
-	 * independientemente de si esta ultima arroja una excepcion. Adicionalmente se
-	 * eligen los nodos involucrados en la rutina aleatoriamente.
+	 * que una rutina ya estuviera ejecutandose, se finaliza y se inicia la nueva.
+	 * Adicionalmente se eligen los nodos involucrados en la rutina aleatoriamente.
 	 */
 	public synchronized void startCustomRoutine(Routine routine) throws Exception {
 		if (!running)
 			return;
-
-		if (executor != null) {
-			executor.close();
-			executor = null;
-			eventSource.sendEvent(new ExternalEvent.ExecutionInterrupted(Reason.NewRoutineStarted));
-		}
 
 		if (nodes.size() < routine.getNumberOfNodes())
 			throw new IllegalArgumentException("No hay suficiente cantidad de nodos conectados");
@@ -138,26 +131,35 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 		for (int i = 0; i < routine.getNumberOfNodes(); i++)
 			nodesAssociations.add(physicalIds.next());
 
-		executor = new CustomExecutor(this, nodesAssociations, routine);
-		executor.addListener(mainController);
-	}
-
-	public synchronized void startPlayerExecution(int numberOfNodes, ArrayList<Color> playersAndColors, boolean waitForAllPlayers, long stepDelay, long stepTimeOut, boolean stopOnStepTimeOut,
-			int numberOfSteps, long executionTimeOut) throws Exception {
-
-		if (!running)
-			return;
-
 		if (executor != null) {
 			executor.close();
 			executor = null;
 			eventSource.sendEvent(new ExternalEvent.ExecutionInterrupted(Reason.NewRoutineStarted));
 		}
 
+		executor = new CustomExecutor(this, nodesAssociations, routine);
+		executor.addListener(mainController);
+	}
+
+	/**
+	 * Inicia una nueva ejecucion con los parametros proporcionados. En caso de que
+	 * una rutina ya estuviera ejecutandose, se finaliza y se inicia la nueva.
+	 * Adicionalmente se eligen los nodos involucrados en la rutina aleatoriamente.
+	 */
+	public synchronized void startPlayerExecution(int numberOfNodes, ArrayList<Color> playersAndColors, boolean waitForAllPlayers, long stepDelay, long stepTimeOut, boolean stopOnStepTimeOut,
+			int numberOfSteps, long executionTimeOut) throws Exception {
+
+		if (!running)
+			return;
+
 		if (numberOfNodes <= 0)
 			throw new IllegalArgumentException("Debe ingresar una cantidad de nodos mayor a 0.");
+		else if (nodes.size() < numberOfNodes)
+			throw new IllegalArgumentException("No hay suficiente cantidad de nodos conectados.");
 		else if (playersAndColors.size() <= 0)
 			throw new IllegalArgumentException("La cantidad de jugadores debe ser mayor a 0.");
+		else if (playersAndColors.size() > numberOfNodes)
+			throw new IllegalArgumentException("La cantidad de nodos solicitada no es suficiente para la cantidad de jugadores.");
 		else if (stepDelay < 0)
 			throw new IllegalArgumentException("El delay de cada paso debe ser mayor o igual a 0.");
 		else if (stepTimeOut < 0)
@@ -172,6 +174,12 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 		ArrayList<Integer> nodesAssociations = new ArrayList<>(numberOfNodes);
 		for (int i = 0; i < numberOfNodes; i++)
 			nodesAssociations.add(physicalIds.next());
+
+		if (executor != null) {
+			executor.close();
+			executor = null;
+			eventSource.sendEvent(new ExternalEvent.ExecutionInterrupted(Reason.NewRoutineStarted));
+		}
 
 		executor = new PlayerExecutor(this, nodesAssociations, playersAndColors, waitForAllPlayers, stepDelay, stepTimeOut, stopOnStepTimeOut, numberOfSteps, executionTimeOut);
 		executor.addListener(mainController);
