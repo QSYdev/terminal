@@ -70,9 +70,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 						prepareStep();
 					} else {
 						// TODO results.finish();
-						turnAllNodes(Color.NO_COLOR);
-						routineFinished = true;
-						eventSource.sendEvent(new InternalEvent.ExecutionFinished());
+						finalizeRoutine(true);
 					}
 				}
 			}
@@ -87,7 +85,20 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 	}
 
-	private void startExecution() {
+	private void preInitExecution() throws InterruptedException {
+		Color[] colors = { Color.RED, Color.GREEN };
+		long[] delays = { 500, 150 };
+
+		for (int i = 0; i < 2; i++) {
+			for (int j = 0; j < 2; j++) {
+				synchronized (this) {
+					if (!routineFinished)
+						turnAllNodes(colors[i]);
+				}
+				Thread.sleep(delays[i]);
+			}
+		}
+
 		synchronized (this) {
 			if (!routineFinished) {
 				eventSource.sendEvent(new InternalEvent.ExecutionStarted());
@@ -101,12 +112,8 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 	}
 
 	private void turnAllNodes(Color color) {
-		synchronized (this) {
-			if (!routineFinished) {
-				for (int i = 0; i < biMap.size(); i++)
-					terminal.sendCommand(new CommandArgs(biMap.getPhysicalId(i), color, 0, 0), true);
-			}
-		}
+		for (int i = 0; i < biMap.size(); i++)
+			terminal.sendCommand(new CommandArgs(biMap.getPhysicalId(i), color, 0, 0), true);
 	}
 
 	protected abstract Step getNextStep();
@@ -157,9 +164,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		synchronized (this) {
 			if (!routineFinished) {
 				// TODO results.executionTimeOut();
-				turnAllNodes(Color.NO_COLOR);
-				routineFinished = true;
-				eventSource.sendEvent(new InternalEvent.ExecutionFinished());
+				finalizeRoutine(true);
 			}
 		}
 	}
@@ -176,15 +181,20 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 					prepareStep();
 				} else {
 					// TODO results.finish();
-					turnAllNodes(Color.NO_COLOR);
-					routineFinished = true;
-					eventSource.sendEvent(new InternalEvent.ExecutionFinished());
+					finalizeRoutine(true);
 				}
 			}
 		}
 	}
 
 	protected abstract void stepTimeOutEvent(int stepIndex);
+
+	private void finalizeRoutine(boolean notify) {
+		turnAllNodes(Color.NO_COLOR);
+		routineFinished = true;
+		if (notify)
+			eventSource.sendEvent(new InternalEvent.ExecutionFinished());
+	}
 
 	@Override
 	public final void addListener(EventListener<InternalEvent> eventListener) {
@@ -203,8 +213,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 				return;
 
 			closed = true;
-			turnAllNodes(Color.NO_COLOR);
-			routineFinished = true;
+			finalizeRoutine(false);
 			preInitTask.interrupt();
 			try {
 				Field f = Thread.class.getDeclaredField("target");
@@ -272,20 +281,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		@Override
 		public void run() {
 			try {
-				for (int j = 0; j < 2; j++) {
-					turnAllNodes(Color.RED);
-					Thread.sleep(500);
-					turnAllNodes(Color.NO_COLOR);
-					Thread.sleep(500);
-				}
-
-				for (int j = 0; j < 2; j++) {
-					turnAllNodes(Color.GREEN);
-					Thread.sleep(150);
-					turnAllNodes(Color.NO_COLOR);
-					Thread.sleep(150);
-				}
-				startExecution();
+				preInitExecution();
 			} catch (InterruptedException e) {
 			}
 		}
