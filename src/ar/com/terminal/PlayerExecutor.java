@@ -41,7 +41,7 @@ final class PlayerExecutor extends Executor {
 	@Override
 	protected void toucheEvent(int physicalId, int stepIndex, Color color, long delay) {
 		/* Solo se guarda el color ganador del step */
-		if (stepsWinners.size() < stepIndex)
+		if (stepsWinners.size() < this.stepIndex)
 			stepsWinners.add(color);
 	}
 

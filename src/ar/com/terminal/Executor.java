@@ -133,15 +133,9 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 
 		expressionTree = new ExpressionTree(currentStep.getExpression());
-		if (currentStep.getTimeOut() > 0) {
-			try {
-				Field f = Thread.class.getDeclaredField("target");
-				f.setAccessible(true);
-				((StepTimeOutTask) f.get(stepTimeOutTask)).setStepTimeOut(currentStep.getTimeOut() + maxDelay, stepIndex);
-				f.setAccessible(false);
-			} catch (Exception e) {
-			}
-		}
+
+		if (currentStep.getTimeOut() > 0)
+			setStepTimeOut(currentStep.getTimeOut() + maxDelay, stepIndex);
 	}
 
 	private void finalizeStep() {
@@ -166,6 +160,20 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 				// TODO results.executionTimeOut();
 				finalizeRoutine(true);
 			}
+		}
+	}
+
+	private void setStepTimeOut(long stepTimeOut, int stepIndex) {
+		try {
+			Field f = Thread.class.getDeclaredField("target");
+			f.setAccessible(true);
+			StepTimeOutTask task = ((StepTimeOutTask) f.get(stepTimeOutTask));
+			f.setAccessible(false);
+			if (stepTimeOut < 0)
+				task.running.set(false);
+			else
+				task.messages.add(new SimpleImmutableEntry<>(stepTimeOut, stepIndex));
+		} catch (Exception e) {
 		}
 	}
 
@@ -215,13 +223,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 			closed = true;
 			finalizeRoutine(false);
 			preInitTask.interrupt();
-			try {
-				Field f = Thread.class.getDeclaredField("target");
-				f.setAccessible(true);
-				((StepTimeOutTask) f.get(stepTimeOutTask)).setStepTimeOut(-1, 0);
-				f.setAccessible(false);
-			} catch (Exception e) {
-			}
+			setStepTimeOut(-1, 0);
 			stepTimeOutTask.interrupt();
 			executionTimeOutTask.interrupt();
 		}
@@ -312,13 +314,6 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 
 		private final AtomicBoolean running = new AtomicBoolean(true);
 		private final LinkedBlockingQueue<Entry<Long, Integer>> messages = new LinkedBlockingQueue<>();
-
-		public void setStepTimeOut(long stepTimeOut, int stepIndex) {
-			if (stepTimeOut < 0)
-				running.set(false);
-			else
-				messages.add(new SimpleImmutableEntry<>(stepTimeOut, stepIndex));
-		}
 
 		@Override
 		public void run() {
