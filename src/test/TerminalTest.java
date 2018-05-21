@@ -29,15 +29,15 @@ public final class TerminalTest {
 		ArrayList<Step> steps = new ArrayList<>(2);
 		{
 			LinkedList<NodeConfiguration> nodeConfigurationList = new LinkedList<>();
-			nodeConfigurationList.add(new NodeConfiguration(0, 0, Color.RED));
-			nodeConfigurationList.add(new NodeConfiguration(1, 0, Color.GREEN));
-			steps.add(new Step(nodeConfigurationList, 3000, "0|1", false));
+			nodeConfigurationList.add(new NodeConfiguration(0, 500, Color.RED));
+			nodeConfigurationList.add(new NodeConfiguration(1, 500, Color.GREEN));
+			steps.add(new Step(nodeConfigurationList, 0, "0|1", false));
 		}
 		{
 			LinkedList<NodeConfiguration> nodeConfigurationList = new LinkedList<>();
-			nodeConfigurationList.add(new NodeConfiguration(0, 0, Color.YELLOW));
-			nodeConfigurationList.add(new NodeConfiguration(1, 0, Color.BLUE));
-			steps.add(new Step(nodeConfigurationList, 1000, "0&1", false));
+			nodeConfigurationList.add(new NodeConfiguration(0, 500, Color.YELLOW));
+			nodeConfigurationList.add(new NodeConfiguration(1, 500, Color.BLUE));
+			steps.add(new Step(nodeConfigurationList, 0, "0&1", false));
 		}
 		routine = new Routine(2, 2, 0, steps, "Prueba");
 	}
@@ -83,7 +83,11 @@ public final class TerminalTest {
 					ArrayList<Color> playersAndColors = new ArrayList<>();
 					playersAndColors.add(Color.RED);
 					playersAndColors.add(Color.GREEN);
-					terminal.startPlayerExecution(3, playersAndColors, false, 0, 500, false, 100, 10000);
+					playersAndColors.add(Color.BLUE);
+					terminal.startPlayerExecution(3, playersAndColors, false, 500, 1000, true, 10, 0);
+					break;
+				case 'b':
+					terminal.sendCommand(new CommandArgs(19, Color.RED, 500, 1));
 					break;
 				}
 

@@ -70,6 +70,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 						prepareStep();
 					} else {
 						// TODO results.finish();
+						turnAllNodes(Color.NO_COLOR);
 						routineFinished = true;
 						eventSource.sendEvent(new InternalEvent.ExecutionFinished());
 					}
@@ -125,12 +126,14 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 
 		expressionTree = new ExpressionTree(currentStep.getExpression());
-		try {
-			Field f = Thread.class.getDeclaredField("target");
-			f.setAccessible(true);
-			((StepTimeOutTask) f.get(stepTimeOutTask)).setStepTimeOut(currentStep.getTimeOut() + maxDelay, stepIndex);
-			f.setAccessible(false);
-		} catch (Exception e) {
+		if (currentStep.getTimeOut() > 0) {
+			try {
+				Field f = Thread.class.getDeclaredField("target");
+				f.setAccessible(true);
+				((StepTimeOutTask) f.get(stepTimeOutTask)).setStepTimeOut(currentStep.getTimeOut() + maxDelay, stepIndex);
+				f.setAccessible(false);
+			} catch (Exception e) {
+			}
 		}
 	}
 
@@ -154,6 +157,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		synchronized (this) {
 			if (!routineFinished) {
 				// TODO results.executionTimeOut();
+				turnAllNodes(Color.NO_COLOR);
 				routineFinished = true;
 				eventSource.sendEvent(new InternalEvent.ExecutionFinished());
 			}
@@ -172,6 +176,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 					prepareStep();
 				} else {
 					// TODO results.finish();
+					turnAllNodes(Color.NO_COLOR);
 					routineFinished = true;
 					eventSource.sendEvent(new InternalEvent.ExecutionFinished());
 				}
@@ -198,6 +203,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 				return;
 
 			closed = true;
+			turnAllNodes(Color.NO_COLOR);
 			routineFinished = true;
 			preInitTask.interrupt();
 			try {
