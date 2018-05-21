@@ -85,7 +85,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 	}
 
-	private void preInitExecution() throws InterruptedException {
+	private void preInit() throws InterruptedException {
 		Color[] colors = { Color.RED, Color.GREEN };
 		long[] delays = { 500, 150 };
 
@@ -283,7 +283,7 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		@Override
 		public void run() {
 			try {
-				preInitExecution();
+				preInit();
 			} catch (InterruptedException e) {
 			}
 		}
