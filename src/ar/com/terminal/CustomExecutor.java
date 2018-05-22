@@ -20,13 +20,13 @@ final class CustomExecutor extends Executor {
 	}
 
 	@Override
-	protected Step getNextStep() {
-		return steps.next();
+	protected boolean hasNextStep() {
+		return steps.hasNext();
 	}
 
 	@Override
-	protected boolean hasNextStep() {
-		return steps.hasNext();
+	protected Step getNextStep() {
+		return steps.next();
 	}
 
 	@Override

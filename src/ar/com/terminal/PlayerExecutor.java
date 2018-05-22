@@ -46,6 +46,11 @@ final class PlayerExecutor extends Executor {
 	}
 
 	@Override
+	protected boolean hasNextStep() {
+		return numberOfSteps == 0 || stepIndex < numberOfSteps;
+	}
+
+	@Override
 	protected Step getNextStep() {
 		char booleanOperator = (waitForAllPlayers) ? '&' : '|';
 		LinkedList<Integer> usedIds = new LinkedList<>();
@@ -68,11 +73,6 @@ final class PlayerExecutor extends Executor {
 
 		++stepIndex;
 		return new Step(nodesConfiguration, stepTimeOut, expression, stopOnStepTimeOut);
-	}
-
-	@Override
-	protected boolean hasNextStep() {
-		return numberOfSteps == 0 || stepIndex < numberOfSteps;
 	}
 
 	@Override

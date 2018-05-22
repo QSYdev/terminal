@@ -85,40 +85,14 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		}
 	}
 
-	private void preInit() throws InterruptedException {
-		Color[] colors = { Color.RED, Color.GREEN };
-		long[] delays = { 500, 150 };
-
-		for (int i = 0; i < 2; i++) {
-			for (int j = 0; j < 2; j++) {
-				synchronized (this) {
-					if (!routineFinished)
-						turnAllNodes(colors[i]);
-				}
-				Thread.sleep(delays[i]);
-			}
-		}
-
-		synchronized (this) {
-			if (!routineFinished) {
-				eventSource.sendEvent(new InternalEvent.ExecutionStarted());
-				// TODO results.start();
-				currentStep = getNextStep();
-				turnAllNodes(Color.NO_COLOR);
-				prepareStep();
-				executionTimeOutTask.start();
-			}
-		}
-	}
-
 	private void turnAllNodes(Color color) {
 		for (int i = 0; i < biMap.size(); i++)
 			terminal.sendCommand(new CommandArgs(biMap.getPhysicalId(i), color, 0, 0), true);
 	}
 
-	protected abstract Step getNextStep();
-
 	protected abstract boolean hasNextStep();
+
+	protected abstract Step getNextStep();
 
 	private void prepareStep() {
 		stepIndex = STEP_INDEX = (++STEP_INDEX > Short.MAX_VALUE) ? 1 : STEP_INDEX;
@@ -154,15 +128,6 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 		expressionTree = null;
 	}
 
-	private void executionTimeOut() {
-		synchronized (this) {
-			if (!routineFinished) {
-				// TODO results.executionTimeOut();
-				finalizeRoutine(true);
-			}
-		}
-	}
-
 	private void setStepTimeOut(long stepTimeOut, int stepIndex) {
 		try {
 			Field f = Thread.class.getDeclaredField("target");
@@ -174,24 +139,6 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 			else
 				task.messages.add(new SimpleImmutableEntry<>(stepTimeOut, stepIndex));
 		} catch (Exception e) {
-		}
-	}
-
-	private void stepTimeOut(int stepIndex) {
-		synchronized (this) {
-			if (!routineFinished && stepIndex == this.stepIndex) {
-				stepTimeOutEvent(stepIndex);
-				// TODO results.stepTimeout(stepIndex);
-				eventSource.sendEvent(new InternalEvent.StepTimeOut());
-				finalizeStep();
-				if (hasNextStep() && !currentStep.stopOnTimeOut()) {
-					currentStep = getNextStep();
-					prepareStep();
-				} else {
-					// TODO results.finish();
-					finalizeRoutine(true);
-				}
-			}
 		}
 	}
 
@@ -280,10 +227,32 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 
 	private final class PreInitTask implements Runnable {
 
+		private final Color[] colors = { Color.RED, Color.GREEN };
+		private final long[] delays = { 500, 150 };
+
 		@Override
 		public void run() {
 			try {
-				preInit();
+				for (int i = 0; i < 2; i++) {
+					for (int j = 0; j < 2; j++) {
+						synchronized (this) {
+							if (!routineFinished)
+								turnAllNodes(colors[i]);
+						}
+						Thread.sleep(delays[i]);
+					}
+				}
+
+				synchronized (this) {
+					if (!routineFinished) {
+						eventSource.sendEvent(new InternalEvent.ExecutionStarted());
+						// TODO results.start();
+						currentStep = getNextStep();
+						turnAllNodes(Color.NO_COLOR);
+						prepareStep();
+						executionTimeOutTask.start();
+					}
+				}
 			} catch (InterruptedException e) {
 			}
 		}
@@ -303,7 +272,12 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 			try {
 				if (executionTimeOut > 0) {
 					Thread.sleep(executionTimeOut);
-					executionTimeOut();
+					synchronized (this) {
+						if (!routineFinished) {
+							// TODO results.executionTimeOut();
+							finalizeRoutine(true);
+						}
+					}
 				}
 			} catch (InterruptedException e) {
 			}
@@ -322,7 +296,21 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 					Entry<Long, Integer> entry = messages.take();
 					if (entry.getKey() > 0) {
 						Thread.sleep(entry.getKey());
-						stepTimeOut(entry.getValue());
+						synchronized (this) {
+							if (!routineFinished && entry.getValue() == stepIndex) {
+								stepTimeOutEvent(entry.getValue());
+								// TODO results.stepTimeout(entry.getValue());
+								eventSource.sendEvent(new InternalEvent.StepTimeOut());
+								finalizeStep();
+								if (hasNextStep() && !currentStep.stopOnTimeOut()) {
+									currentStep = getNextStep();
+									prepareStep();
+								} else {
+									// TODO results.finish();
+									finalizeRoutine(true);
+								}
+							}
+						}
 					}
 				} catch (InterruptedException e) {
 				}
