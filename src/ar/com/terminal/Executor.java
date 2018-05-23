@@ -62,14 +62,12 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 			if (logicalId != null && stepIndex == this.stepIndex) {
 				toucheEvent(physicalId, stepIndex, color, delay);
 				touchedNodes[logicalId] = true;
-				// TODO results.touche(logicalId, stepIndex, color, delay);
 				if (expressionTree.evaluateExpressionTree(touchedNodes)) {
 					finalizeStep();
 					if (hasNextStep()) {
 						currentStep = getNextStep();
 						prepareStep();
 					} else {
-						// TODO results.finish();
 						finalizeRoutine(true);
 					}
 				}
@@ -246,7 +244,6 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 				synchronized (this) {
 					if (!routineFinished) {
 						eventSource.sendEvent(new InternalEvent.ExecutionStarted());
-						// TODO results.start();
 						currentStep = getNextStep();
 						turnAllNodes(Color.NO_COLOR);
 						prepareStep();
@@ -273,10 +270,8 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 				if (executionTimeOut > 0) {
 					Thread.sleep(executionTimeOut);
 					synchronized (this) {
-						if (!routineFinished) {
-							// TODO results.executionTimeOut();
+						if (!routineFinished)
 							finalizeRoutine(true);
-						}
 					}
 				}
 			} catch (InterruptedException e) {
@@ -299,14 +294,12 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 						synchronized (this) {
 							if (!routineFinished && entry.getValue() == stepIndex) {
 								stepTimeOutEvent(entry.getValue());
-								// TODO results.stepTimeout(entry.getValue());
 								eventSource.sendEvent(new InternalEvent.StepTimeOut());
 								finalizeStep();
 								if (hasNextStep() && !currentStep.stopOnTimeOut()) {
 									currentStep = getNextStep();
 									prepareStep();
 								} else {
-									// TODO results.finish();
 									finalizeRoutine(true);
 								}
 							}

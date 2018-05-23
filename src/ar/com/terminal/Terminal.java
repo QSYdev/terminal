@@ -123,10 +123,8 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 		if (!running)
 			return;
 
-		if (routine.getNumberOfNodes() <= 0)
-			throw new IllegalArgumentException("Debe ingresar una cantidad de nodos mayor a 0.");
-		else if (nodes.size() < routine.getNumberOfNodes())
-			throw new IllegalArgumentException("No hay suficiente cantidad de nodos conectados");
+		if (nodes.size() < routine.getNumberOfNodes())
+			throw new IllegalArgumentException("No hay suficiente cantidad de nodos conectados.");
 
 		Iterator<Integer> physicalIds = nodes.keySet().iterator();
 		ArrayList<Integer> nodesAssociations = new ArrayList<>(routine.getNumberOfNodes());

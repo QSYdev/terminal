@@ -4,7 +4,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Stack;
 
-public final class ExpressionTree {
+final class ExpressionTree {
 
 	private final ExpressionNode expressionRootNode;
 
@@ -48,7 +48,7 @@ public final class ExpressionTree {
 		}
 	}
 
-	private static class ExpressionNode {
+	private static final class ExpressionNode {
 
 		private final int value;
 		private final ExpressionNode right;

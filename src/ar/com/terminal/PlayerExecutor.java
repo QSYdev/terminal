@@ -80,4 +80,8 @@ final class PlayerExecutor extends Executor {
 		stepsWinners.add(Color.NO_COLOR);
 	}
 
+	public ArrayList<Color> getStepsWinners() {
+		return stepsWinners;
+	}
+
 }
