@@ -39,6 +39,11 @@ public final class RoutineManager {
 
 	private static final Gson gson;
 
+	/**
+	 * Lee una rutina desde un archivo fisico. Siempre y cuando la rutina no haya
+	 * sido manipulada fuera de este sistema, se garantiza que la misma contendra un
+	 * formato valido para ser ejecutada en la terminal.
+	 */
 	public static Routine loadRoutine(String path) throws UnsupportedEncodingException, IOException {
 		Reader reader = null;
 		Routine routine = null;
@@ -53,6 +58,11 @@ public final class RoutineManager {
 		return routine;
 	}
 
+	/**
+	 * Almacena la rutina en un archivo fisico especificado. Previo al
+	 * almacenamiento de la misma se procede a hacer las validaciones
+	 * correspondientes para determinar si es una rutina valida.
+	 */
 	public static void storeRoutine(String path, Routine routine) throws IOException, IllegalArgumentException {
 		Writer writer = null;
 		validateRoutine(routine);
