@@ -125,7 +125,7 @@ final class Sender extends EventSourceI<InternalEvent> implements AutoCloseable 
 					bytesTransmitted += channel.write(byteBuffer);
 
 				if (bytesTransmitted != QSYPacket.PACKET_SIZE)
-					throw new IOException("<< SENDER >> El paquete hacia el nodo " + packet.getPhysicalId() + " no se pudo enviar correctamente");
+					throw new IOException("El paquete hacia el nodo " + packet.getPhysicalId() + " no se pudo enviar correctamente");
 
 				byteBuffer.clear();
 			}

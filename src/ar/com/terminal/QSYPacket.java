@@ -30,14 +30,13 @@ public final class QSYPacket {
 	private static final byte COLOR_B_INDEX = 0x07;
 	private static final byte DELAY_INDEX = 0x08;
 	private static final byte STEP_INDEX = 0x0C;
-	private static final byte CONFIGURATION_INDEX = 0x0E;
 
 	private static final byte TYPE_HELLO = 0x00;
 	private static final byte TYPE_COMMAND = 0x01;
 	private static final byte TYPE_TOUCHE = 0x02;
 	private static final byte TYPE_KEEPALIVE = 0x03;
 
-	public enum PacketType {
+	public static enum PacketType {
 		Hello, Command, Touche, Keepalive
 	}
 
@@ -47,11 +46,9 @@ public final class QSYPacket {
 	private final Color color;
 	private final long delay;
 	private final int numberOfStep;
-	private final boolean touch;
-	private final boolean sound;
 	private final byte[] rawData;
 
-	private QSYPacket(InetAddress nodeAddress, PacketType type, int id, Color color, long delay, int numberOfStep, boolean touch, boolean sound) {
+	private QSYPacket(InetAddress nodeAddress, PacketType type, int id, Color color, long delay, int numberOfStep) throws IllegalArgumentException {
 		this.rawData = new byte[PACKET_SIZE];
 		rawData[Q_INDEX] = 'Q';
 		rawData[S_INDEX] = 'S';
@@ -67,25 +64,15 @@ public final class QSYPacket {
 		setDataIntoArray(getShortFromPacketType(packetType), (byte) 8, rawData, TYPE_INDEX);
 		this.numberOfStep = numberOfStep;
 		setDataIntoArray(numberOfStep, (byte) 16, rawData, STEP_INDEX);
-
-		int configuration = 0x00;
-		if (this.touch = touch) {
-			configuration += 0x02;
-		}
-		if (this.sound = sound) {
-			configuration += 0x01;
-		}
-		setDataIntoArray(configuration, (byte) 16, rawData, CONFIGURATION_INDEX);
 	}
 
 	public QSYPacket(InetAddress nodeAddress, byte[] data) throws IllegalArgumentException {
-		if (nodeAddress == null) {
-			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> La direccion del nodo debe ser valida");
-		} else if (data.length != PACKET_SIZE) {
-			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> La longitud del QSYPacket debe ser de " + PACKET_SIZE + ".");
-		} else if (data[Q_INDEX] != 'Q' || data[S_INDEX] != 'S' || data[Y_INDEX] != 'Y') {
-			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> El QSYPacket posee una firma invalida.");
-		}
+		if (nodeAddress == null)
+			throw new IllegalArgumentException("La direccion del nodo debe ser valida");
+		else if (data.length != PACKET_SIZE)
+			throw new IllegalArgumentException("La longitud del QSYPacket debe ser de " + PACKET_SIZE + ".");
+		else if (data[Q_INDEX] != 'Q' || data[S_INDEX] != 'S' || data[Y_INDEX] != 'Y')
+			throw new IllegalArgumentException("El QSYPacket posee una firma invalida.");
 
 		this.nodeAddress = nodeAddress;
 		this.packetType = getPacketTypeFromShort(((short) convertBytesToLong(data, TYPE_INDEX, TYPE_INDEX)));
@@ -93,11 +80,7 @@ public final class QSYPacket {
 		this.color = getColorFromInt(data);
 		this.delay = (long) convertBytesToLong(data, DELAY_INDEX, (byte) (DELAY_INDEX + 3));
 		this.numberOfStep = (int) convertBytesToLong(data, STEP_INDEX, (byte) (STEP_INDEX + 1));
-
-		short configuration = (short) convertBytesToLong(data, CONFIGURATION_INDEX, (byte) (CONFIGURATION_INDEX + 1));
-		this.touch = ((configuration & 0x0002) == 0x0002);
-		this.sound = ((configuration & 0x0001) == 0x0001);
-		rawData = Arrays.copyOf(data, PACKET_SIZE);
+		this.rawData = Arrays.copyOf(data, PACKET_SIZE);
 	}
 
 	private static Color getColorFromInt(byte[] data) {
@@ -107,11 +90,11 @@ public final class QSYPacket {
 		return ColorFactory.createColor(red, green, blue);
 	}
 
-	private static int getIntFromColor(Color color) throws IllegalArgumentException {
+	private static int getIntFromColor(Color color) {
 		return (int) (color.getRed() * Math.pow(2, 12) + color.getGreen() * Math.pow(2, 8) + color.getBlue() * Math.pow(2, 4));
 	}
 
-	private static PacketType getPacketTypeFromShort(short type) {
+	private static PacketType getPacketTypeFromShort(short type) throws IllegalArgumentException {
 		PacketType packetType;
 		switch (type) {
 		case TYPE_HELLO:
@@ -127,13 +110,13 @@ public final class QSYPacket {
 			packetType = PacketType.Keepalive;
 			break;
 		default:
-			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> El QSYPacket posee un type invalido.");
+			throw new IllegalArgumentException("El QSYPacket posee un type invalido.");
 		}
 
 		return packetType;
 	}
 
-	private static short getShortFromPacketType(PacketType packetType) {
+	private static short getShortFromPacketType(PacketType packetType) throws IllegalArgumentException {
 		short type;
 		switch (packetType) {
 		case Hello: {
@@ -153,7 +136,7 @@ public final class QSYPacket {
 			break;
 		}
 		default: {
-			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> El QSYPacket posee un type invalido.");
+			throw new IllegalArgumentException("El QSYPacket posee un type invalido.");
 		}
 		}
 		return type;
@@ -183,14 +166,6 @@ public final class QSYPacket {
 		return numberOfStep;
 	}
 
-	public boolean touchEnabled() {
-		return touch;
-	}
-
-	public boolean soundEnabled() {
-		return sound;
-	}
-
 	public byte[] getRawData() {
 		return rawData;
 	}
@@ -218,9 +193,8 @@ public final class QSYPacket {
 		for (byte i = (byte) (bits - 1); i >= 0; i--) {
 			data[i / 8 + firstIndex] += mul * (val % 2);
 			mul <<= 1;
-			if (mul == 256) {
+			if (mul == 256)
 				mul = 1;
-			}
 			val >>= 1;
 		}
 	}
@@ -251,29 +225,24 @@ public final class QSYPacket {
 		stringBuilder.append(getColor());
 		stringBuilder.append(" || DELAY = " + getDelay());
 		stringBuilder.append("\nSTEP = " + getNumberOfStep());
-		stringBuilder.append(" || DISTANCE = " + touchEnabled() + " || SOUND = " + soundEnabled() + "\n");
 
 		return stringBuilder.toString();
 	}
 
-	public static QSYPacket createCommandPacket(CommandArgs params) {
-
+	public static QSYPacket createCommandPacket(CommandArgs params) throws IllegalArgumentException {
 		int physicalId = params.getPhysicialId();
 		Color color = params.getColor();
 		long delay = params.getDelay();
 		int numberOfStep = params.getNumberOfStep();
-		boolean touchEnabled = params.isTouch();
-		boolean soundEnabled = params.isSound();
 
-		if (physicalId < MIN_ID_SIZE || physicalId > MAX_ID_SIZE) {
-			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> El id debe estar entre [" + MIN_ID_SIZE + " ; " + MAX_ID_SIZE + "]");
-		} else if (color == null) {
-			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> El QSYPacket no posee el color correspondiente.");
-		} else if (delay < MIN_DELAY_SIZE || delay > MAX_DELAY_SIZE) {
-			throw new IllegalArgumentException("<< QSY_PACKET_ERROR >> El delay debe estar entre [" + MIN_DELAY_SIZE + " ; " + MAX_DELAY_SIZE + "]");
-		} else {
-			return new QSYPacket(null, PacketType.Command, physicalId, color, delay, numberOfStep, touchEnabled, soundEnabled);
-		}
+		if (physicalId < MIN_ID_SIZE || physicalId > MAX_ID_SIZE)
+			throw new IllegalArgumentException("El id debe estar entre [" + MIN_ID_SIZE + " ; " + MAX_ID_SIZE + "]");
+		else if (color == null)
+			throw new IllegalArgumentException("El QSYPacket no posee el color correspondiente.");
+		else if (delay < MIN_DELAY_SIZE || delay > MAX_DELAY_SIZE)
+			throw new IllegalArgumentException("El delay debe estar entre [" + MIN_DELAY_SIZE + " ; " + MAX_DELAY_SIZE + "]");
+		else
+			return new QSYPacket(null, PacketType.Command, physicalId, color, delay, numberOfStep);
 	}
 
 	public static final class CommandArgs {
@@ -282,20 +251,12 @@ public final class QSYPacket {
 		private final Color color;
 		private final long delay;
 		private final int numberOfStep;
-		private final boolean touch;
-		private final boolean sound;
 
-		public CommandArgs(int physicalId, Color color, long delay, int numberOfStep, boolean touch, boolean sound) {
+		public CommandArgs(int physicalId, Color color, long delay, int numberOfStep) {
 			this.physicalId = physicalId;
 			this.color = color;
 			this.delay = delay;
 			this.numberOfStep = numberOfStep;
-			this.touch = touch;
-			this.sound = sound;
-		}
-
-		public CommandArgs(int physicalId, Color color, long delay, int numberOfStep) {
-			this(physicalId, color, delay, numberOfStep, false, false);
 		}
 
 		public int getPhysicialId() {
@@ -312,14 +273,6 @@ public final class QSYPacket {
 
 		public int getNumberOfStep() {
 			return numberOfStep;
-		}
-
-		public boolean isTouch() {
-			return touch;
-		}
-
-		public boolean isSound() {
-			return sound;
 		}
 
 	}
@@ -349,4 +302,5 @@ public final class QSYPacket {
 		}
 
 	}
+
 }

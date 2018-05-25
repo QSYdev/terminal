@@ -11,17 +11,17 @@ class Node implements AutoCloseable {
 	private final InetAddress nodeAddress;
 	private final SocketChannel nodeSocketChannel;
 
-	public Node(final QSYPacket qsyPacket) throws IOException {
+	public Node(QSYPacket qsyPacket) throws IOException, IllegalArgumentException {
 		if (qsyPacket.getType() == QSYPacket.PacketType.Hello) {
-			final InetSocketAddress hostAddress = new InetSocketAddress(qsyPacket.getNodeAddress().getHostAddress(), QSYPacket.TCP_PORT);
-			final SocketChannel nodeSocketChannel = SocketChannel.open(hostAddress);
+			InetSocketAddress hostAddress = new InetSocketAddress(qsyPacket.getNodeAddress().getHostAddress(), QSYPacket.TCP_PORT);
+			SocketChannel nodeSocketChannel = SocketChannel.open(hostAddress);
 			nodeSocketChannel.socket().setTcpNoDelay(true);
 			nodeSocketChannel.configureBlocking(false);
 			this.physicalId = qsyPacket.getPhysicalId();
 			this.nodeAddress = qsyPacket.getNodeAddress();
 			this.nodeSocketChannel = nodeSocketChannel;
 		} else {
-			throw new IllegalArgumentException("<< NODE >> El QSYPacket recibido no es un QSYHelloPacket.");
+			throw new IllegalArgumentException("El QSYPacket recibido no es un QSYHelloPacket.");
 		}
 	}
 

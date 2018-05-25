@@ -116,10 +116,10 @@ final class ExpressionTree {
 						queue.add(elem);
 					}
 					if (elem != OPEN_PARENTHESIS_INT_VALUE) {
-						throw new IllegalArgumentException("<< QSY_UTILS_ERROR >> La expresion '" + expression + "' es invalida.");
+						throw new IllegalArgumentException("La expresion '" + expression + "' es invalida.");
 					}
 				} else {
-					throw new IllegalArgumentException("<< QSY_UTILS_ERROR >> La expresion '" + expression + "' es invalida.");
+					throw new IllegalArgumentException("La expresion '" + expression + "' es invalida.");
 				}
 			}
 			while (!stack.isEmpty()) {
@@ -127,7 +127,7 @@ final class ExpressionTree {
 				if ((elem = stack.pop()) != OPEN_PARENTHESIS_INT_VALUE) {
 					queue.add(elem);
 				} else {
-					throw new IllegalArgumentException("<< QSY_UTILS_ERROR >> La expresion '" + expression + "' es invalida.");
+					throw new IllegalArgumentException("La expresion '" + expression + "' es invalida.");
 				}
 			}
 
@@ -166,7 +166,7 @@ final class ExpressionTree {
 							queue.add(num);
 							number.clear();
 						} else {
-							throw new IllegalArgumentException("<< QSY_UTILS_ERROR >> La expresion '" + expression + "' es invalida.");
+							throw new IllegalArgumentException("La expresion '" + expression + "' es invalida.");
 						}
 					}
 					if (value == '&') {
@@ -180,7 +180,7 @@ final class ExpressionTree {
 					} else if (value == ' ') {
 
 					} else {
-						throw new IllegalArgumentException("<< QSY_UTILS_ERROR >> La expresion '" + expression + "' es invalida.");
+						throw new IllegalArgumentException("La expresion '" + expression + "' es invalida.");
 					}
 				}
 			}
