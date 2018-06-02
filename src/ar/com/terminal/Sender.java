@@ -11,7 +11,7 @@ import ar.com.terminal.Event.InternalEvent;
 final class Sender extends EventSourceI<InternalEvent> implements AutoCloseable {
 
 	private final EventSource<InternalEvent> eventSource;
-	private final LinkedBlockingQueue<SenderCommand> pendingTasks;
+	private final LinkedBlockingQueue<Command> pendingTasks;
 
 	private final TreeMap<Integer, SocketChannel> nodes;
 	private final ByteBuffer byteBuffer;
@@ -34,10 +34,7 @@ final class Sender extends EventSourceI<InternalEvent> implements AutoCloseable 
 	}
 
 	public void newNode(int physicalId, SocketChannel socket) {
-		synchronized (nodes) {
-			if (!nodes.containsKey(physicalId) || !nodes.get(physicalId).equals(socket))
-				nodes.put(physicalId, socket);
-		}
+		pendingTasks.add(new NewNodeCommand(physicalId, socket));
 	}
 
 	public void command(QSYPacket packet) {
@@ -45,9 +42,7 @@ final class Sender extends EventSourceI<InternalEvent> implements AutoCloseable 
 	}
 
 	public void removeNode(int physicalId) {
-		synchronized (nodes) {
-			nodes.remove(physicalId);
-		}
+		pendingTasks.add(new RemoveNodeCommand(physicalId));
 	}
 
 	@Override
@@ -85,7 +80,7 @@ final class Sender extends EventSourceI<InternalEvent> implements AutoCloseable 
 		public void run() {
 			while (running) {
 				try {
-					SenderCommand task = pendingTasks.take();
+					Command task = pendingTasks.take();
 					task.execute();
 				} catch (InterruptedException e) {
 					running = false;
@@ -97,7 +92,31 @@ final class Sender extends EventSourceI<InternalEvent> implements AutoCloseable 
 
 	}
 
-	private final class SenderCommand {
+	private static abstract class Command {
+
+		public abstract void execute() throws Exception;
+
+	}
+
+	private final class NewNodeCommand extends Command {
+
+		private final int physicalId;
+		private final SocketChannel socket;
+
+		public NewNodeCommand(int physicalId, SocketChannel socket) {
+			this.physicalId = physicalId;
+			this.socket = socket;
+		}
+
+		@Override
+		public void execute() throws Exception {
+			if (!nodes.containsKey(physicalId) || !nodes.get(physicalId).equals(socket))
+				nodes.put(physicalId, socket);
+		}
+
+	}
+
+	private final class SenderCommand extends Command {
 
 		private static final int MAX_TRIES = 256;
 		private final QSYPacket packet;
@@ -106,29 +125,43 @@ final class Sender extends EventSourceI<InternalEvent> implements AutoCloseable 
 			this.packet = packet;
 		}
 
+		@Override
 		public void execute() throws Exception {
 			if (packet.getType() != QSYPacket.PacketType.Command)
 				return;
 
-			SocketChannel channel;
-
-			synchronized (nodes) {
-				channel = nodes.get(packet.getPhysicalId());
-			}
+			SocketChannel channel = nodes.get(packet.getPhysicalId());
 
 			if (channel != null) {
-				byteBuffer.put(packet.getRawData());
-				byteBuffer.flip();
-				byte bytesTransmitted = 0;
-				short tries = 0;
-				while (bytesTransmitted < QSYPacket.PACKET_SIZE && tries++ < MAX_TRIES)
-					bytesTransmitted += channel.write(byteBuffer);
+				try {
+					byteBuffer.put(packet.getRawData());
+					byteBuffer.flip();
+					byte bytesTransmitted = 0;
+					short tries = 0;
+					while (bytesTransmitted < QSYPacket.PACKET_SIZE && tries++ < MAX_TRIES)
+						bytesTransmitted += channel.write(byteBuffer);
 
-				if (bytesTransmitted != QSYPacket.PACKET_SIZE)
-					throw new IOException("El paquete hacia el nodo " + packet.getPhysicalId() + " no se pudo enviar correctamente");
-
-				byteBuffer.clear();
+					if (bytesTransmitted != QSYPacket.PACKET_SIZE)
+						throw new IOException("El paquete hacia el nodo " + packet.getPhysicalId() + " no se pudo enviar correctamente");
+				} finally {
+					byteBuffer.clear();
+				}
 			}
+		}
+
+	}
+
+	private final class RemoveNodeCommand extends Command {
+
+		private final int physicalId;
+
+		public RemoveNodeCommand(int physicalId) {
+			this.physicalId = physicalId;
+		}
+
+		@Override
+		public void execute() throws Exception {
+			nodes.remove(physicalId);
 		}
 
 	}
