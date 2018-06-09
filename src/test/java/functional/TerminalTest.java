@@ -1,25 +1,25 @@
-package test;
+package functional;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
-import ar.com.terminal.Color;
-import ar.com.terminal.Event.ExternalEvent;
-import ar.com.terminal.Event.ExternalEvent.ConnectedNode;
-import ar.com.terminal.Event.ExternalEvent.DisconnectedNode;
-import ar.com.terminal.Event.ExternalEvent.ExecutionFinished;
-import ar.com.terminal.Event.ExternalEvent.ExecutionInterrupted;
-import ar.com.terminal.Event.ExternalEvent.ExecutionStarted;
-import ar.com.terminal.Event.ExternalEvent.ExternalEventVisitor;
-import ar.com.terminal.Event.ExternalEvent.StepTimeOut;
-import ar.com.terminal.Event.ExternalEvent.Touche;
-import ar.com.terminal.EventListener;
-import ar.com.terminal.QSYPacket.CommandArgs;
-import ar.com.terminal.Routine;
-import ar.com.terminal.RoutineManager;
-import ar.com.terminal.Terminal;
+import terminal.Color;
+import terminal.Event.ExternalEvent;
+import terminal.Event.ExternalEvent.ConnectedNode;
+import terminal.Event.ExternalEvent.DisconnectedNode;
+import terminal.Event.ExternalEvent.ExecutionFinished;
+import terminal.Event.ExternalEvent.ExecutionInterrupted;
+import terminal.Event.ExternalEvent.ExecutionStarted;
+import terminal.Event.ExternalEvent.ExternalEventVisitor;
+import terminal.Event.ExternalEvent.StepTimeOut;
+import terminal.Event.ExternalEvent.Touche;
+import terminal.EventListener;
+import terminal.QSYPacket.CommandArgs;
+import terminal.Routine;
+import terminal.RoutineManager;
+import terminal.Terminal;
 
 public final class TerminalTest {
 

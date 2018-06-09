@@ -1,9 +1,9 @@
-package ar.com.terminal;
+package terminal;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 
-import ar.com.terminal.Routine.Step;
+import terminal.Routine.Step;
 
 final class CustomExecutor extends Executor {
 

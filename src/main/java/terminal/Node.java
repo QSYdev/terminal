@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package terminal;
 
 import java.io.IOException;
 import java.net.InetAddress;

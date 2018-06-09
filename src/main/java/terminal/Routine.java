@@ -1,10 +1,10 @@
-package ar.com.terminal;
+package terminal;
 
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedList;
 
-import ar.com.terminal.Routine.Step;
+import terminal.Routine.Step;
 
 public final class Routine implements Iterable<Step> {
 

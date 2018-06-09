@@ -1,9 +1,9 @@
-package ar.com.terminal;
+package terminal;
 
 import java.net.InetAddress;
 import java.util.Arrays;
 
-import ar.com.terminal.Color.ColorFactory;
+import terminal.Color.ColorFactory;
 
 public final class QSYPacket {
 

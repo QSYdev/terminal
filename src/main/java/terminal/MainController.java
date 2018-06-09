@@ -1,13 +1,13 @@
-package ar.com.terminal;
+package terminal;
 
-import ar.com.terminal.Event.InternalEvent;
-import ar.com.terminal.Event.InternalEvent.CloseSignal;
-import ar.com.terminal.Event.InternalEvent.ExecutionFinished;
-import ar.com.terminal.Event.InternalEvent.ExecutionStarted;
-import ar.com.terminal.Event.InternalEvent.IncomingPacket;
-import ar.com.terminal.Event.InternalEvent.InternalEventVisitor;
-import ar.com.terminal.Event.InternalEvent.KeepAliveError;
-import ar.com.terminal.Event.InternalEvent.StepTimeOut;
+import terminal.Event.InternalEvent;
+import terminal.Event.InternalEvent.CloseSignal;
+import terminal.Event.InternalEvent.ExecutionFinished;
+import terminal.Event.InternalEvent.ExecutionStarted;
+import terminal.Event.InternalEvent.IncomingPacket;
+import terminal.Event.InternalEvent.InternalEventVisitor;
+import terminal.Event.InternalEvent.KeepAliveError;
+import terminal.Event.InternalEvent.StepTimeOut;
 
 final class MainController extends EventListener<InternalEvent> implements AutoCloseable {
 

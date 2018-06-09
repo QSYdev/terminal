@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package terminal;
 
 import java.lang.reflect.Field;
 import java.util.AbstractMap.SimpleImmutableEntry;
@@ -8,10 +8,10 @@ import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import ar.com.terminal.Event.InternalEvent;
-import ar.com.terminal.QSYPacket.CommandArgs;
-import ar.com.terminal.Routine.NodeConfiguration;
-import ar.com.terminal.Routine.Step;
+import terminal.Event.InternalEvent;
+import terminal.QSYPacket.CommandArgs;
+import terminal.Routine.NodeConfiguration;
+import terminal.Routine.Step;
 
 abstract class Executor extends EventSourceI<InternalEvent> implements AutoCloseable {
 

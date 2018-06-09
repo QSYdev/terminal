@@ -1,8 +1,8 @@
-package ar.com.terminal;
+package terminal;
 
 import java.util.TreeMap;
 
-import ar.com.terminal.Event.InternalEvent;
+import terminal.Event.InternalEvent;
 
 final class KeepAlive extends EventSourceI<InternalEvent> implements AutoCloseable {
 

@@ -7,6 +7,8 @@ tmp/
 *~.nib
 local.properties
 .settings/
+.classpath
+.project
 .loadpath
 .recommenders
 .externalToolBuilders/
@@ -14,3 +16,9 @@ local.properties
 .buildpath
 .idea/
 terminal.iml
+terminal.ipr
+terminal.iws
+.gradle/
+!gradle-wrapper.jar
+/build/
+out/

@@ -1,8 +1,8 @@
-package ar.com.terminal;
+package terminal;
 
 import java.net.InetAddress;
 
-import ar.com.terminal.QSYPacket.ToucheArgs;
+import terminal.QSYPacket.ToucheArgs;
 
 /**
  * La clase Event provee una interfaz para trabajar con eventos.

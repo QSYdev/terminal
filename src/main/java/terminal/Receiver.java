@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package terminal;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -9,8 +9,8 @@ import java.nio.channels.SocketChannel;
 import java.util.TreeMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
-import ar.com.terminal.Event.InternalEvent;
-import ar.com.terminal.QSYPacket.PacketType;
+import terminal.Event.InternalEvent;
+import terminal.QSYPacket.PacketType;
 
 final class Receiver extends EventSourceI<InternalEvent> implements AutoCloseable {
 

@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package terminal;
 
 import java.net.Inet4Address;
 import java.net.InetAddress;
@@ -7,16 +7,16 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.TreeMap;
 
-import ar.com.terminal.Event.ExternalEvent;
-import ar.com.terminal.Event.ExternalEvent.ExecutionInterrupted.Reason;
-import ar.com.terminal.Event.InternalEvent.CloseSignal;
-import ar.com.terminal.Event.InternalEvent.ExecutionFinished;
-import ar.com.terminal.Event.InternalEvent.ExecutionStarted;
-import ar.com.terminal.Event.InternalEvent.IncomingPacket;
-import ar.com.terminal.Event.InternalEvent.KeepAliveError;
-import ar.com.terminal.Event.InternalEvent.StepTimeOut;
-import ar.com.terminal.QSYPacket.CommandArgs;
-import ar.com.terminal.QSYPacket.ToucheArgs;
+import terminal.Event.ExternalEvent;
+import terminal.Event.ExternalEvent.ExecutionInterrupted.Reason;
+import terminal.Event.InternalEvent.CloseSignal;
+import terminal.Event.InternalEvent.ExecutionFinished;
+import terminal.Event.InternalEvent.ExecutionStarted;
+import terminal.Event.InternalEvent.IncomingPacket;
+import terminal.Event.InternalEvent.KeepAliveError;
+import terminal.Event.InternalEvent.StepTimeOut;
+import terminal.QSYPacket.CommandArgs;
+import terminal.QSYPacket.ToucheArgs;
 
 /**
  * La clase Terminal es la interfaz de comunicacion externa con las demas

@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package terminal;
 
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -22,9 +22,9 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
-import ar.com.terminal.Color.ColorFactory;
-import ar.com.terminal.Routine.NodeConfiguration;
-import ar.com.terminal.Routine.Step;
+import terminal.Color.ColorFactory;
+import terminal.Routine.NodeConfiguration;
+import terminal.Routine.Step;
 
 public final class RoutineManager {
 

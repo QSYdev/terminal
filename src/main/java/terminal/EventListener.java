@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package terminal;
 
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;

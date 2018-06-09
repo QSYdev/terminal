@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package terminal;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -9,8 +9,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.util.TreeSet;
 
-import ar.com.terminal.Event.InternalEvent;
-import ar.com.terminal.QSYPacket.PacketType;
+import terminal.Event.InternalEvent;
+import terminal.QSYPacket.PacketType;
 
 final class MulticastReceiver extends EventSourceI<InternalEvent> implements AutoCloseable {
 

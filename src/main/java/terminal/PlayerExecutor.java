@@ -1,11 +1,11 @@
-package ar.com.terminal;
+package terminal;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.concurrent.ThreadLocalRandom;
 
-import ar.com.terminal.Routine.NodeConfiguration;
-import ar.com.terminal.Routine.Step;
+import terminal.Routine.NodeConfiguration;
+import terminal.Routine.Step;
 
 final class PlayerExecutor extends Executor {
 

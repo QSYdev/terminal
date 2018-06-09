@@ -1,4 +1,4 @@
-package ar.com.terminal;
+package terminal;
 
 import java.util.LinkedList;
 import java.util.List;
