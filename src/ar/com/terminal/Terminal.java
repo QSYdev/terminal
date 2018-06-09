@@ -159,7 +159,7 @@ public final class Terminal extends EventSourceI<ExternalEvent> implements AutoC
 		else if (playersAndColors.size() <= 0)
 			throw new IllegalArgumentException("La cantidad de jugadores debe ser mayor a 0.");
 		else if (playersAndColors.size() > numberOfNodes)
-			throw new IllegalArgumentException("La cantidad de nodos solicitada no es suficiente para la cantidad de jugadores.");
+			throw new IllegalArgumentException("La cantidad de nodos solicitada no es suficiente para la cantidad de jugadores solicitados.");
 		else if (stepDelay < 0)
 			throw new IllegalArgumentException("El delay de cada paso debe ser mayor o igual a 0.");
 		else if (stepTimeOut < 0)
