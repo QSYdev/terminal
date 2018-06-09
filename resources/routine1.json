@@ -1,0 +1,56 @@
+{
+  "name" : "rutina inicial",
+  "playerCount" : 1,
+  "numberOfNodes": 1,
+  "totalTimeOut": 0,
+  "steps": [
+    {
+      "expression": "0",
+      "timeOut": 0,
+      "stopOnTimeout": false,
+      "nodesConfigurations": [
+        {
+          "id": 0,
+          "delay": 500,
+          "color": {
+            "red": 15,
+            "green": 0,
+            "blue": 0
+          }
+        }
+      ]
+    },
+    {
+      "expression": "0",
+      "timeOut": 2000,
+      "stopOnTimeout": false,
+      "nodesConfigurations": [
+        {
+          "id": 0,
+          "delay": 500,
+          "color": {
+            "red": 15,
+            "green": 15,
+            "blue": 0
+          }
+        }
+      ]
+    },
+    {
+      "expression": "0",
+      "timeOut": 2000,
+      "stopOnTimeout": false,
+      "nodesConfigurations": [
+        {
+          "id": 0,
+          "delay": 500,
+          "color": {
+            "red": 15,
+            "green": 0,
+            "blue": 0
+          }
+		}
+      ]
+    }
+  ]
+}

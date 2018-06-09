@@ -41,7 +41,7 @@ public final class TerminalTest {
 		// }
 		// routine = new Routine(2, 2, 0, steps, "Prueba");
 		try {
-			routine = RoutineManager.loadRoutine("/Users/agus/eclipse-workspace/desktop/resources/routine1.json");
+			routine = RoutineManager.loadRoutine("resources/routine1.json");
 			RoutineManager.validateRoutine(routine);
 		} catch (UnsupportedEncodingException e) {
 			e.printStackTrace();
