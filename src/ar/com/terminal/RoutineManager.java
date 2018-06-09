@@ -10,6 +10,7 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
+import java.util.List;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -59,13 +60,10 @@ public final class RoutineManager {
 	}
 
 	/**
-	 * Almacena la rutina en un archivo fisico especificado. Previo al
-	 * almacenamiento de la misma se procede a hacer las validaciones
-	 * correspondientes para determinar si es una rutina valida.
+	 * Almacena la rutina en un archivo fisico especificado.
 	 */
 	public static void storeRoutine(String path, Routine routine) throws IOException, IllegalArgumentException {
 		Writer writer = null;
-		validateRoutine(routine);
 		try {
 			writer = new FileWriter(path);
 			gson.toJson(routine, writer);
@@ -75,7 +73,11 @@ public final class RoutineManager {
 		}
 	}
 
-	private static void validateRoutine(Routine routine) throws IllegalArgumentException {
+	/**
+	 * Determina si la rutina que se envia por parametro es valida. La misma no
+	 * puede ser nula.
+	 */
+	public static void validateRoutine(Routine routine) throws IllegalArgumentException {
 		if (routine.getPlayersCount() <= 0)
 			throw new IllegalArgumentException("La cantidad de jugadores debe ser mayor a 0.");
 		else if (routine.getNumberOfNodes() <= 0)
@@ -85,17 +87,32 @@ public final class RoutineManager {
 
 		int i = 0;
 		for (Step step : routine.getSteps()) {
-			++i;
-			if (step.getTimeOut() < 0)
+			if (step.getTimeOut() < 0) {
 				throw new IllegalArgumentException("StepTimeOut del step " + i + " debe ser mayor o igual a 0.");
-			else {
+			} else {
+
+				List<Integer> values = ExpressionTree.getValuesFromExpression(step.getExpression());
+				for (int value : values) {
+					if (value >= routine.getNumberOfNodes())
+						throw new IllegalArgumentException("El nodo " + value + " del step " + i + " debe ser menor a la cantidad de nodos elegidos");
+				}
+
 				int j = 0;
 				for (NodeConfiguration config : step.getNodeConfigurationList()) {
-					++j;
 					if (config.getDelay() < 0)
 						throw new IllegalArgumentException("El delay de la configuracion " + j + " en el step " + i + " debe ser mayor o igual a 0.");
+					else if (config.getLogicalId() >= routine.getNumberOfNodes())
+						throw new IllegalArgumentException("El nodo " + config.getLogicalId() + " de la configuracion " + j + " en el step " + i + " debe ser menor a la cantidad de nodos elegidos.");
+
+					values.remove((Object) config.getLogicalId());
+					j++;
 				}
+
+				if (!values.isEmpty())
+					throw new IllegalArgumentException("No hay ninguna configuracion que encienda el nodo " + values.get(0) + " en el step " + i);
+
 			}
+			++i;
 		}
 	}
 

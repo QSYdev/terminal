@@ -1,7 +1,8 @@
 package test;
 
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.LinkedList;
 import java.util.Scanner;
 
 import ar.com.terminal.Color;
@@ -17,29 +18,36 @@ import ar.com.terminal.Event.ExternalEvent.Touche;
 import ar.com.terminal.EventListener;
 import ar.com.terminal.QSYPacket.CommandArgs;
 import ar.com.terminal.Routine;
-import ar.com.terminal.Routine.NodeConfiguration;
-import ar.com.terminal.Routine.Step;
+import ar.com.terminal.RoutineManager;
 import ar.com.terminal.Terminal;
 
 public final class TerminalTest {
 
 	private static Terminal terminal;
-	private static final Routine routine;
+	private static Routine routine;
 	static {
-		ArrayList<Step> steps = new ArrayList<>(2);
-		{
-			LinkedList<NodeConfiguration> nodeConfigurationList = new LinkedList<>();
-			nodeConfigurationList.add(new NodeConfiguration(0, 500, Color.RED));
-			nodeConfigurationList.add(new NodeConfiguration(1, 500, Color.GREEN));
-			steps.add(new Step(nodeConfigurationList, 0, "0|1", false));
+		// ArrayList<Step> steps = new ArrayList<>(2);
+		// {
+		// LinkedList<NodeConfiguration> nodeConfigurationList = new LinkedList<>();
+		// nodeConfigurationList.add(new NodeConfiguration(0, 500, Color.RED));
+		// nodeConfigurationList.add(new NodeConfiguration(1, 500, Color.GREEN));
+		// steps.add(new Step(nodeConfigurationList, 0, "0|1", false));
+		// }
+		// {
+		// LinkedList<NodeConfiguration> nodeConfigurationList = new LinkedList<>();
+		// nodeConfigurationList.add(new NodeConfiguration(0, 500, Color.YELLOW));
+		// nodeConfigurationList.add(new NodeConfiguration(1, 500, Color.BLUE));
+		// steps.add(new Step(nodeConfigurationList, 0, "0&1", false));
+		// }
+		// routine = new Routine(2, 2, 0, steps, "Prueba");
+		try {
+			routine = RoutineManager.loadRoutine("/Users/agus/eclipse-workspace/desktop/resources/routine1.json");
+			RoutineManager.validateRoutine(routine);
+		} catch (UnsupportedEncodingException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		{
-			LinkedList<NodeConfiguration> nodeConfigurationList = new LinkedList<>();
-			nodeConfigurationList.add(new NodeConfiguration(0, 500, Color.YELLOW));
-			nodeConfigurationList.add(new NodeConfiguration(1, 500, Color.BLUE));
-			steps.add(new Step(nodeConfigurationList, 0, "0&1", false));
-		}
-		routine = new Routine(2, 2, 0, steps, "Prueba");
 	}
 
 	public static void main(String[] args) throws Exception {

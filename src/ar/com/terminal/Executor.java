@@ -238,6 +238,11 @@ abstract class Executor extends EventSourceI<InternalEvent> implements AutoClose
 								turnAllNodes(colors[i]);
 						}
 						Thread.sleep(delays[i]);
+						synchronized (this) {
+							if (!routineFinished)
+								turnAllNodes(Color.NO_COLOR);
+						}
+						Thread.sleep(delays[i]);
 					}
 				}
 

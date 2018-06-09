@@ -2,6 +2,7 @@ package ar.com.terminal;
 
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Stack;
 
 final class ExpressionTree {
@@ -46,6 +47,16 @@ final class ExpressionTree {
 			}
 			}
 		}
+	}
+
+	public static List<Integer> getValuesFromExpression(String expression) {
+		List<Integer> result = new LinkedList<>();
+		int[] exp = Utils.fromInfixToPostfix(expression);
+		for (int value : exp) {
+			if (value != Utils.AND_INT_VALUE && value != Utils.OR_INT_VALUE)
+				result.add(value);
+		}
+		return result;
 	}
 
 	private static final class ExpressionNode {
