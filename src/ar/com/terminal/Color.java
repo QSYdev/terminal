@@ -58,8 +58,11 @@ public final class Color {
 		return "RED = " + red + " || GREEN = " + green + " || BLUE = " + blue;
 	}
 
-	static final class ColorFactory {
+	public static final class ColorFactory {
 
+		/**
+		 * Crea un color a partir de los valores rgb proporcionados.
+		 */
 		public static Color createColor(byte red, byte green, byte blue) {
 			int redValue = (red == 0x0F) ? 1 : 0;
 			int greenValue = (green == 0x0F) ? 1 : 0;
