@@ -1,4 +1,4 @@
-package functional;
+package terminal;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
@@ -15,16 +15,13 @@ import terminal.Event.ExternalEvent.ExecutionStarted;
 import terminal.Event.ExternalEvent.ExternalEventVisitor;
 import terminal.Event.ExternalEvent.StepTimeOut;
 import terminal.Event.ExternalEvent.Touche;
-import terminal.EventListener;
 import terminal.QSYPacket.CommandArgs;
-import terminal.Routine;
-import terminal.RoutineManager;
-import terminal.Terminal;
 
 public final class TerminalTest {
 
 	private static Terminal terminal;
 	private static Routine routine;
+
 	static {
 		// ArrayList<Step> steps = new ArrayList<>(2);
 		// {
@@ -40,14 +37,14 @@ public final class TerminalTest {
 		// steps.add(new Step(nodeConfigurationList, 0, "0&1", false));
 		// }
 		// routine = new Routine(2, 2, 0, steps, "Prueba");
-		try {
-			routine = RoutineManager.loadRoutine("resources/routine1.json");
-			RoutineManager.validateRoutine(routine);
-		} catch (UnsupportedEncodingException e) {
-			e.printStackTrace();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			routine = RoutineManager.loadRoutine("src/resources/routine1.json");
+//			RoutineManager.validateRoutine(routine);
+//		} catch (UnsupportedEncodingException e) {
+//			e.printStackTrace();
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 	}
 
 	public static void main(String[] args) throws Exception {
@@ -56,7 +53,7 @@ public final class TerminalTest {
 		final Thread thread = new Thread(task, "Task");
 		thread.start();
 
-		terminal = new Terminal("10.0.0.1");
+		terminal = new Terminal("10.0.0.2");
 		terminal.addListener(task);
 
 		Scanner scanner = new Scanner(System.in);
@@ -65,38 +62,38 @@ public final class TerminalTest {
 			try {
 				command = scanner.next().charAt(0);
 				switch (command) {
-				case 's':
-					terminal.start();
-					break;
-				case 'n':
-					terminal.searchNodes();
-					break;
-				case 'e':
-					if (streesTask == null)
-						streesTask = new StressTask();
-					break;
-				case 'f':
-					terminal.finalizeNodesSearching();
-					break;
-				case 'c':
-					System.out.println(terminal.getConnectedNodes());
-					break;
-				case 'r':
-					terminal.startCustomRoutine(routine);
-					break;
-				case 'y':
-					terminal.stopRoutine();
-					break;
-				case 'p':
-					ArrayList<Color> playersAndColors = new ArrayList<>();
-					playersAndColors.add(Color.RED);
-					playersAndColors.add(Color.GREEN);
-					playersAndColors.add(Color.BLUE);
-					terminal.startPlayerExecution(3, playersAndColors, false, 500, 1000, true, 10, 0);
-					break;
-				case 'b':
-					terminal.sendCommand(new CommandArgs(19, Color.RED, 500, 1));
-					break;
+					case 's':
+						terminal.start();
+						break;
+					case 'n':
+						terminal.searchNodes();
+						break;
+					case 'e':
+						if (streesTask == null)
+							streesTask = new StressTask();
+						break;
+					case 'f':
+						terminal.finalizeNodesSearching();
+						break;
+					case 'c':
+						System.out.println(terminal.getConnectedNodes());
+						break;
+					case 'r':
+						terminal.startCustomRoutine(routine);
+						break;
+					case 'y':
+						terminal.stopRoutine();
+						break;
+					case 'p':
+						ArrayList<Color> playersAndColors = new ArrayList<>();
+						playersAndColors.add(Color.RED);
+						playersAndColors.add(Color.GREEN);
+						playersAndColors.add(Color.BLUE);
+						terminal.startPlayerExecution(3, playersAndColors, false, 500, 1000, true, 10, 0);
+						break;
+					case 'b':
+						terminal.sendCommand(new CommandArgs(19, Color.RED, 500, 1));
+						break;
 				}
 
 			} catch (Exception e) {
