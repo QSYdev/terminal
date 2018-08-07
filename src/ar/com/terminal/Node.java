@@ -13,7 +13,7 @@ class Node implements AutoCloseable {
 
 	public Node(QSYPacket qsyPacket) throws IOException, IllegalArgumentException {
 		if (qsyPacket.getType() == QSYPacket.PacketType.Hello) {
-			InetSocketAddress hostAddress = new InetSocketAddress(qsyPacket.getNodeAddress().getHostAddress(), QSYPacket.TCP_PORT);
+			InetSocketAddress hostAddress = new InetSocketAddress(qsyPacket.getNodeAddress().getHostAddress(), qsyPacket.getNumberOfStep());
 			SocketChannel nodeSocketChannel = SocketChannel.open(hostAddress);
 			nodeSocketChannel.socket().setTcpNoDelay(true);
 			nodeSocketChannel.configureBlocking(false);
